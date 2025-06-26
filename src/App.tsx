@@ -11,6 +11,10 @@ import Results from "./pages/Results";
 import SavedProfiles from "./pages/SavedProfiles";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import Shortlist from "./pages/Shortlist";
+import Process from "./pages/Process";
+import Transcript from "./pages/Transcript";
+import FinalSelects from "./pages/FinalSelects";
 
 const queryClient = new QueryClient();
 
@@ -27,7 +31,10 @@ const App = () => (
           <Route path="/history" element={<Layout><History /></Layout>} />
           <Route path="/results/:searchId" element={<Layout><Results /></Layout>} />
           <Route path="/saved-profiles" element={<Layout><SavedProfiles /></Layout>} />
-          <Route path="/shortlist/:searchId" element={<Layout><div className="p-8 text-center"><h1 className="text-2xl font-bold text-foreground">Shortlist Page</h1><p className="text-muted-foreground">Coming Soon</p></div></Layout>} />
+          <Route path="/shortlist/:searchId" element={<Layout><Shortlist /></Layout>} />
+          <Route path="/process" element={<Layout><Process /></Layout>} />
+          <Route path="/transcript/:candidateId" element={<Layout><Transcript /></Layout>} />
+          <Route path="/final-selects" element={<Layout><FinalSelects /></Layout>} />
           <Route path="/candidate/:id" element={<Layout><div className="p-8 text-center"><h1 className="text-2xl font-bold text-foreground">Candidate Profile</h1><p className="text-muted-foreground">Coming Soon</p></div></Layout>} />
           <Route path="/joinees" element={<Layout><div className="p-8 text-center"><h1 className="text-2xl font-bold text-foreground">Joinees</h1><p className="text-muted-foreground">Coming Soon</p></div></Layout>} />
           <Route path="/account" element={<Layout><div className="p-8 text-center"><h1 className="text-2xl font-bold text-foreground">Account Settings</h1><p className="text-muted-foreground">Coming Soon</p></div></Layout>} />

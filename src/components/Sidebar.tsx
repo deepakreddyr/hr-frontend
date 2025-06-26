@@ -12,7 +12,9 @@ import {
   Settings, 
   CreditCard, 
   HelpCircle,
-  LogOut
+  LogOut,
+  FileText,
+  Star
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -20,8 +22,10 @@ const Sidebar = () => {
   
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: FileText, label: 'Process Job', path: '/process' },
     { icon: History, label: 'History', path: '/history' },
     { icon: Heart, label: 'Saved Profiles', path: '/saved-profiles' },
+    { icon: Star, label: 'Final Selects', path: '/final-selects' },
     { icon: UserCheck, label: 'Joinees', path: '/joinees' },
     { icon: User, label: 'Account', path: '/account' },
     { icon: CreditCard, label: 'Billing', path: '/billing' },
