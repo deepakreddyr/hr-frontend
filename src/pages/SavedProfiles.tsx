@@ -1,64 +1,32 @@
-
-import React, { useState } from 'react';
-import { Heart, Search, Phone, Star, Eye, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Heart, Search, Phone, Eye, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const SavedProfiles = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [savedCandidates, setSavedCandidates] = useState([]);
 
-  // Mock data for saved profiles
-  const savedCandidates = [
-    {
-      id: 1,
-      name: 'Alex Rodriguez',
-      phone: '+1 (555) 123-4567',
-      job_role: 'Senior React Developer',
-      skills: 'React, TypeScript, AWS, Node.js',
-      experience: '5 years',
-      match_score: 95,
-      location: 'San Francisco, CA',
-      saved_date: '2024-01-15'
-    },
-    {
-      id: 3,
-      name: 'Michael Johnson',
-      phone: '+1 (555) 345-6789',
-      job_role: 'Full Stack Developer',
-      skills: 'Angular, Node.js, MongoDB, Docker',
-      experience: '7 years',
-      match_score: 92,
-      location: 'New York, NY',
-      saved_date: '2024-01-14'
-    },
-    {
-      id: 5,
-      name: 'Lisa Zhang',
-      phone: '+1 (555) 567-8901',
-      job_role: 'Frontend Developer',
-      skills: 'Vue.js, React, CSS, JavaScript',
-      experience: '4 years',
-      match_score: 87,
-      location: 'Seattle, WA',
-      saved_date: '2024-01-12'
-    },
-    {
-      id: 7,
-      name: 'David Kim',
-      phone: '+1 (555) 789-0123',
-      job_role: 'DevOps Engineer',
-      skills: 'Kubernetes, AWS, CI/CD, Terraform',
-      experience: '6 years',
-      match_score: 90,
-      location: 'Austin, TX',
-      saved_date: '2024-01-10'
-    }
-  ];
+  useEffect(() => {
+    const fetchSavedCandidates = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/get-liked-candiates', {
+          credentials: 'include',
+        });
+        const data = await response.json();
+        setSavedCandidates(data || []);
+      } catch (error) {
+        console.error('Failed to fetch saved candidates:', error);
+      }
+    };
+
+    fetchSavedCandidates();
+  }, []);
 
   const filteredCandidates = savedCandidates.filter(candidate =>
-    candidate.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    candidate.skills.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    candidate.job_role.toLowerCase().includes(searchTerm.toLowerCase())
+    candidate.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    candidate.skills?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    candidate.job_role?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleCandidateClick = (candidateId: number) => {
@@ -115,7 +83,7 @@ const SavedProfiles = () => {
             {/* Profile Header */}
             <div className="flex items-center space-x-3 mb-4">
               <div className="w-12 h-12 bg-gradient-to-r from-primary to-accent rounded-full flex items-center justify-center text-white font-bold text-lg">
-                {candidate.name.split(' ').map(n => n[0]).join('')}
+                {candidate.name?.split(' ').map(n => n[0]).join('')}
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
@@ -129,14 +97,14 @@ const SavedProfiles = () => {
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-muted-foreground">Match Score</span>
-                <span className={`px-2 py-1 rounded-full text-sm font-medium ${getMatchScoreColor(candidate.match_score)}`}>
-                  {candidate.match_score}%
+                <span className={`px-2 py-1 rounded-full text-sm font-medium ${getMatchScoreColor(candidate.match_score || 0)}`}>
+                  {candidate.match_score || 0}%
                 </span>
               </div>
               <div className="w-full bg-secondary rounded-full h-2">
                 <div
                   className="bg-gradient-to-r from-primary to-accent h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${candidate.match_score}%` }}
+                  style={{ width: `${candidate.match_score || 0}%` }}
                 />
               </div>
             </div>
@@ -145,27 +113,35 @@ const SavedProfiles = () => {
             <div className="space-y-3 mb-4">
               <div className="flex items-center space-x-2">
                 <Phone className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm text-foreground">{candidate.phone}</span>
+                <span className="text-sm text-foreground">{candidate.phone || '-'}</span>
               </div>
-              
+
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Experience</p>
-                <p className="text-sm text-foreground">{candidate.experience}</p>
+                <p className="text-sm text-foreground">{candidate.total_experience || '-'}</p>
               </div>
 
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Key Skills</p>
-                <p className="text-sm text-foreground line-clamp-2">{candidate.skills}</p>
+                <p className="text-sm text-foreground line-clamp-2">{candidate.skills || '-'}</p>
               </div>
 
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Location</p>
-                <p className="text-sm text-foreground">{candidate.location}</p>
+                <p className="text-sm text-foreground">{candidate.location || '-'}</p>
               </div>
 
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Saved on</p>
-                <p className="text-sm text-foreground">{candidate.saved_date}</p>
+                <p className="text-sm text-foreground">
+                  {candidate.created_at
+                    ? new Date(candidate.created_at).toLocaleDateString('en-IN', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })
+                    : '-'}
+                </p>
               </div>
             </div>
 
@@ -194,8 +170,8 @@ const SavedProfiles = () => {
             {searchTerm ? 'No matching profiles found' : 'No saved profiles yet'}
           </h3>
           <p className="text-muted-foreground">
-            {searchTerm 
-              ? 'Try adjusting your search terms to find what you\'re looking for.' 
+            {searchTerm
+              ? 'Try adjusting your search terms to find what you\'re looking for.'
               : 'Start saving your favorite candidates to see them here.'}
           </p>
         </div>

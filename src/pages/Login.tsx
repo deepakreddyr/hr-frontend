@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Eye, EyeOff, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -13,12 +12,37 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Navigate to dashboard
-    navigate('/dashboard');
+
+    try {
+      const response = await fetch('http://localhost:5000/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          email,
+          password,
+        }),
+        credentials: 'include', // Send session cookie
+      });
+
+      if (response.redirected) {
+        // Flask is redirecting to /dashboard
+        window.location.href = response.url;
+      } else {
+        const text = await response.text();
+        if (text.includes('Invalid credentials') || text.includes('Login failed')) {
+          alert('Login failed. Please check your credentials.');
+        } else {
+          navigate('/dashboard');
+        }
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('An error occurred during login.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

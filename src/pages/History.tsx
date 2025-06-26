@@ -1,52 +1,39 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Plus, Calendar, User, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const History = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [searches, setSearches] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data
-  const searches = [
-    {
-      id: 1,
-      rc_name: 'John Smith',
-      job_role: 'Senior React Developer',
-      key_skills: 'React, TypeScript, Node.js',
-      created_at: '2024-01-15',
-      candidates_count: 25
-    },
-    {
-      id: 2,
-      rc_name: 'Sarah Johnson',
-      job_role: 'Product Manager',
-      key_skills: 'Product Strategy, Agile, Analytics',
-      created_at: '2024-01-14',
-      candidates_count: 18
-    },
-    {
-      id: 3,
-      rc_name: 'Mike Wilson',
-      job_role: 'DevOps Engineer',
-      key_skills: 'AWS, Docker, Kubernetes',
-      created_at: '2024-01-13',
-      candidates_count: 32
-    },
-    {
-      id: 4,
-      rc_name: 'Emily Davis',
-      job_role: 'UX Designer',
-      key_skills: 'Figma, User Research, Prototyping',
-      created_at: '2024-01-12',
-      candidates_count: 15
+  const fetchSearches = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/searches', {
+        credentials: 'include',
+      });
+      const data = await res.json();
+      setSearches(data || []);
+    } catch (error) {
+      console.error('Failed to fetch search data:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const filteredSearches = searches.filter(search =>
-    search.rc_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    search.job_role.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    fetchSearches();
+  }, []);
+
+  const filteredSearches = searches.filter((search) => {
+    const rc = search.rc_name || '';
+    const role = search.job_role || '';
+    return (
+      rc.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      role.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
 
   const handleRowClick = (searchId: number) => {
     navigate(`/results/${searchId}`);
@@ -110,25 +97,23 @@ const History = () => {
                   className="border-b border-border hover:bg-secondary/30 cursor-pointer transition-colors group"
                 >
                   <td className="p-4">
-                    <div className="font-medium text-foreground">{search.rc_name}</div>
+                    <div className="font-medium text-foreground">{search.rc_name || '-'}</div>
+                  </td>
+                  <td className="p-4">{search.job_role || '-'}</td>
+                  <td className="p-4 text-sm text-muted-foreground max-w-xs truncate">
+                    {search.key_skills || '-'}
+                  </td>
+                  <td className="p-4 text-sm text-muted-foreground">
+                    {search.created_at ? new Date(search.created_at).toLocaleDateString() : '-'}
                   </td>
                   <td className="p-4">
-                    <div className="text-foreground">{search.job_role}</div>
-                  </td>
-                  <td className="p-4">
-                    <div className="text-sm text-muted-foreground max-w-xs truncate">
-                      {search.key_skills}
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <div className="text-sm text-muted-foreground">{search.created_at}</div>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex items-center space-x-2">
-                      <span className="bg-primary/20 text-primary px-2 py-1 rounded-full text-sm font-medium">
-                        {search.candidates_count}
-                      </span>
-                    </div>
+                    <span className="bg-primary/20 text-primary px-2 py-1 rounded-full text-sm font-medium">
+                      {Array.isArray(search.shortlisted_index)
+                        ? search.shortlisted_index.length
+                        : (typeof search.shortlisted_index === 'string'
+                            ? JSON.parse(search.shortlisted_index).length
+                            : 0)}
+                    </span>
                   </td>
                   <td className="p-4">
                     <button className="text-primary hover:text-primary/80 transition-colors opacity-0 group-hover:opacity-100">
@@ -142,7 +127,7 @@ const History = () => {
         </div>
       </div>
 
-      {filteredSearches.length === 0 && (
+      {!loading && filteredSearches.length === 0 && (
         <div className="text-center py-12">
           <Search className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
           <h3 className="text-lg font-medium text-foreground mb-2">No searches found</h3>
