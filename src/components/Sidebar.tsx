@@ -12,7 +12,10 @@ import {
   CreditCard,
   HelpCircle,
   LogOut,
+  FileText,
+  Star
 } from 'lucide-react';
+
 
 const Sidebar = () => {
   const location = useLocation();
