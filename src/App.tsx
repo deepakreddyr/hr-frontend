@@ -15,6 +15,10 @@ import Shortlist from "./pages/Shortlist";
 import Process from "./pages/Process";
 import Transcript from "./pages/Transcript";
 import FinalSelects from "./pages/FinalSelects";
+import Account from "./pages/Account";
+import Billing from "./pages/Billing";
+import Settings from "./pages/Settings";
+import Help from "./pages/Help";
 
 const queryClient = new QueryClient();
 
@@ -37,10 +41,10 @@ const App = () => (
           <Route path="/final-selects" element={<Layout><FinalSelects /></Layout>} />
           <Route path="/candidate/:id" element={<Layout><div className="p-8 text-center"><h1 className="text-2xl font-bold text-foreground">Candidate Profile</h1><p className="text-muted-foreground">Coming Soon</p></div></Layout>} />
           <Route path="/joinees" element={<Layout><div className="p-8 text-center"><h1 className="text-2xl font-bold text-foreground">Joinees</h1><p className="text-muted-foreground">Coming Soon</p></div></Layout>} />
-          <Route path="/account" element={<Layout><div className="p-8 text-center"><h1 className="text-2xl font-bold text-foreground">Account Settings</h1><p className="text-muted-foreground">Coming Soon</p></div></Layout>} />
-          <Route path="/billing" element={<Layout><div className="p-8 text-center"><h1 className="text-2xl font-bold text-foreground">Billing</h1><p className="text-muted-foreground">Coming Soon</p></div></Layout>} />
-          <Route path="/settings" element={<Layout><div className="p-8 text-center"><h1 className="text-2xl font-bold text-foreground">Settings</h1><p className="text-muted-foreground">Coming Soon</p></div></Layout>} />
-          <Route path="/help" element={<Layout><div className="p-8 text-center"><h1 className="text-2xl font-bold text-foreground">Help & Support</h1><p className="text-muted-foreground">Coming Soon</p></div></Layout>} />
+          <Route path="/account" element={<Layout><Account /></Layout>} />
+          <Route path="/billing" element={<Layout><Billing /></Layout>} />
+          <Route path="/settings" element={<Layout><Settings /></Layout>} />
+          <Route path="/help" element={<Layout><Help /></Layout>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
