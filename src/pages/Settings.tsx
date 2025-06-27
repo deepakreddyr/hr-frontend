@@ -5,11 +5,12 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Settings as SettingsIcon, Palette, Phone, Bell, Save } from 'lucide-react';
+import { Settings as SettingsIcon, Palette, Phone, Bell, Save, Moon, Sun } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const Settings = () => {
+  const { isDark, toggleTheme } = useTheme();
   const [settings, setSettings] = useState({
-    darkMode: true,
     voiceGender: 'female',
     callSpeed: 'normal',
     reschedule: true,
@@ -23,13 +24,13 @@ const Settings = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <SettingsIcon className="w-8 h-8 text-primary" />
           <h1 className="text-3xl font-bold text-foreground">Settings</h1>
         </div>
-        <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105 glow-primary">
+        <Button onClick={handleSave} className="hover-glow">
           <Save className="w-4 h-4 mr-2" />
           Save Changes
         </Button>
@@ -37,7 +38,7 @@ const Settings = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Theme Settings */}
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 animate-slide-up">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Palette className="w-5 h-5" />
@@ -47,20 +48,26 @@ const Settings = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-foreground font-medium">Dark Mode</Label>
-                <p className="text-muted-foreground text-sm">Use dark theme across the application</p>
+              <div className="flex items-center space-x-3">
+                {isDark ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-primary" />}
+                <div>
+                  <Label className="text-foreground font-medium">
+                    {isDark ? 'Dark Mode' : 'Light Mode'}
+                  </Label>
+                  <p className="text-muted-foreground text-sm">Toggle between dark and light theme</p>
+                </div>
               </div>
               <Switch 
-                checked={settings.darkMode}
-                onCheckedChange={(checked) => setSettings(prev => ({ ...prev, darkMode: checked }))}
+                checked={isDark}
+                onCheckedChange={toggleTheme}
+                className="data-[state=checked]:bg-primary"
               />
             </div>
           </CardContent>
         </Card>
 
         {/* Call Preferences */}
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 animate-slide-up" style={{ animationDelay: '0.1s' }}>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Phone className="w-5 h-5" />
@@ -72,7 +79,7 @@ const Settings = () => {
             <div>
               <Label className="text-foreground font-medium">Voice Gender</Label>
               <Select value={settings.voiceGender} onValueChange={(value) => setSettings(prev => ({ ...prev, voiceGender: value }))}>
-                <SelectTrigger className="bg-background/50 border-border/50">
+                <SelectTrigger className="bg-background/50 border-border/50 hover:border-primary/50 transition-colors">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -84,7 +91,7 @@ const Settings = () => {
             <div>
               <Label className="text-foreground font-medium">Call Speed</Label>
               <Select value={settings.callSpeed} onValueChange={(value) => setSettings(prev => ({ ...prev, callSpeed: value }))}>
-                <SelectTrigger className="bg-background/50 border-border/50">
+                <SelectTrigger className="bg-background/50 border-border/50 hover:border-primary/50 transition-colors">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -102,13 +109,14 @@ const Settings = () => {
               <Switch 
                 checked={settings.reschedule}
                 onCheckedChange={(checked) => setSettings(prev => ({ ...prev, reschedule: checked }))}
+                className="data-[state=checked]:bg-primary"
               />
             </div>
           </CardContent>
         </Card>
 
         {/* Notification Settings */}
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50 lg:col-span-2">
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 lg:col-span-2 animate-slide-up" style={{ animationDelay: '0.2s' }}>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Bell className="w-5 h-5" />
@@ -126,6 +134,7 @@ const Settings = () => {
                 <Switch 
                   checked={settings.emailAlerts}
                   onCheckedChange={(checked) => setSettings(prev => ({ ...prev, emailAlerts: checked }))}
+                  className="data-[state=checked]:bg-primary"
                 />
               </div>
               <div className="flex items-center justify-between">
@@ -136,6 +145,7 @@ const Settings = () => {
                 <Switch 
                   checked={settings.weeklyReports}
                   onCheckedChange={(checked) => setSettings(prev => ({ ...prev, weeklyReports: checked }))}
+                  className="data-[state=checked]:bg-primary"
                 />
               </div>
               <div className="flex items-center justify-between">
@@ -146,6 +156,7 @@ const Settings = () => {
                 <Switch 
                   checked={settings.creditWarnings}
                   onCheckedChange={(checked) => setSettings(prev => ({ ...prev, creditWarnings: checked }))}
+                  className="data-[state=checked]:bg-primary"
                 />
               </div>
             </div>

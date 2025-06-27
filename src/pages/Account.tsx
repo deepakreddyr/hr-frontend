@@ -29,7 +29,7 @@ const Account = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center space-x-3">
         <User className="w-8 h-8 text-primary" />
         <h1 className="text-3xl font-bold text-foreground">Account Settings</h1>
@@ -37,7 +37,7 @@ const Account = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* User Info Card */}
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50 glow-primary">
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 glow-primary animate-slide-up">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <User className="w-5 h-5" />
@@ -65,7 +65,7 @@ const Account = () => {
                 <p className="text-foreground font-medium">{userData.role}</p>
               </div>
             </div>
-            <div className="flex items-center space-x-2 p-3 bg-primary/20 rounded-lg border border-primary/30">
+            <div className="flex items-center space-x-2 p-3 bg-primary/20 rounded-lg border border-primary/30 hover:bg-primary/30 transition-colors">
               <CreditCard className="w-5 h-5 text-primary" />
               <span className="text-foreground">Credits Remaining: </span>
               <span className="text-primary font-bold text-lg">{userData.credits}</span>
@@ -74,7 +74,7 @@ const Account = () => {
         </Card>
 
         {/* Change Password */}
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 animate-slide-up" style={{ animationDelay: '0.1s' }}>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Shield className="w-5 h-5" />
@@ -91,7 +91,7 @@ const Account = () => {
                   type="password"
                   value={passwordForm.oldPassword}
                   onChange={(e) => setPasswordForm(prev => ({ ...prev, oldPassword: e.target.value }))}
-                  className="bg-background/50 border-border/50 focus:ring-primary focus:border-primary"
+                  className="bg-background/50 border-border/50 focus:ring-primary focus:border-primary transition-all duration-200"
                 />
               </div>
               <div>
@@ -101,7 +101,7 @@ const Account = () => {
                   type="password"
                   value={passwordForm.newPassword}
                   onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
-                  className="bg-background/50 border-border/50 focus:ring-primary focus:border-primary"
+                  className="bg-background/50 border-border/50 focus:ring-primary focus:border-primary transition-all duration-200"
                 />
               </div>
               <div>
@@ -111,10 +111,10 @@ const Account = () => {
                   type="password"
                   value={passwordForm.confirmPassword}
                   onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                  className="bg-background/50 border-border/50 focus:ring-primary focus:border-primary"
+                  className="bg-background/50 border-border/50 focus:ring-primary focus:border-primary transition-all duration-200"
                 />
               </div>
-              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105 glow-primary">
+              <Button type="submit" className="w-full hover-glow">
                 Update Password
               </Button>
             </form>
@@ -122,7 +122,7 @@ const Account = () => {
         </Card>
 
         {/* Security Settings */}
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50 lg:col-span-2">
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 lg:col-span-2 animate-slide-up" style={{ animationDelay: '0.2s' }}>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Shield className="w-5 h-5" />
@@ -135,16 +135,16 @@ const Account = () => {
                 <Label className="text-foreground font-medium">Two-Factor Authentication</Label>
                 <p className="text-muted-foreground text-sm">Add an extra layer of security to your account</p>
               </div>
-              <Switch />
+              <Switch className="data-[state=checked]:bg-primary" />
             </div>
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-foreground font-medium">Email Notifications</Label>
                 <p className="text-muted-foreground text-sm">Receive security alerts via email</p>
               </div>
-              <Switch defaultChecked />
+              <Switch defaultChecked className="data-[state=checked]:bg-primary" />
             </div>
-            <Button variant="destructive" className="hover:scale-105 transition-all duration-200">
+            <Button variant="destructive" className="hover-glow">
               <LogOut className="w-4 h-4 mr-2" />
               Logout All Devices
             </Button>
