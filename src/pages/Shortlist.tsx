@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Upload, FileText, X, Sparkles, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,13 +8,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const Shortlist = () => {
   const { searchId } = useParams();
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     requiredSkills: '',
     numberOfCandidates: 5,
     jobRole: '',
-    customQuestion: ''
+    customQuestion: '',
+    candidateData: ''
   });
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -28,18 +31,52 @@ const Shortlist = () => {
     setUploadedFile(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Shortlist criteria:', formData);
-    console.log('Uploaded file:', uploadedFile);
-  };
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!searchId) return;
+
+  setLoading(true);
+  const payload = new FormData();
+  payload.append('skills', formData.requiredSkills);
+  payload.append('jobRole', formData.jobRole);
+  payload.append('numCandidates', formData.numberOfCandidates.toString());
+  payload.append('candidateData', formData.candidateData);
+  if (uploadedFile) {
+    payload.append('jdFile', uploadedFile);
+  }
+
+  try {
+    const res = await fetch(`http://localhost:5000/api/shortlist/${searchId}`, {
+      method: 'POST',
+      credentials: 'include',
+      body: payload,
+      redirect: 'follow', // allow auto-following Flask redirect
+    });
+
+    // Flask will redirect to /process, detect that:
+    if (res.redirected) {
+      window.location.href = res.url; // go to /process
+    } else {
+      const html = await res.text();
+      console.warn("No redirect. HTML response:", html);
+      alert("Shortlist completed, but redirect failed.");
+    }
+  } catch (err) {
+    console.error('Shortlist submit failed:', err);
+    alert('Something went wrong. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleReset = () => {
     setFormData({
       requiredSkills: '',
       numberOfCandidates: 5,
       jobRole: '',
-      customQuestion: ''
+      customQuestion: '',
+      candidateData: ''
     });
     setUploadedFile(null);
   };
@@ -70,30 +107,34 @@ const Shortlist = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Job Role *
-                </label>
+                <label className="block text-sm font-medium text-foreground mb-2">Job Role *</label>
                 <Input
                   value={formData.jobRole}
                   onChange={(e) => setFormData({ ...formData, jobRole: e.target.value })}
                   placeholder="e.g., Senior React Developer"
-                  className="bg-background/50 border-primary/30 focus:border-primary focus:ring-primary/20"
+                  required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Required Skills *
-                </label>
+                <label className="block text-sm font-medium text-foreground mb-2">Required Skills *</label>
                 <Textarea
                   value={formData.requiredSkills}
                   onChange={(e) => setFormData({ ...formData, requiredSkills: e.target.value })}
-                  placeholder="React, TypeScript, Node.js, AWS (comma-separated)"
-                  className="bg-background/50 border-primary/30 focus:border-primary focus:ring-primary/20 min-h-[100px]"
+                  placeholder="React, TypeScript, Node.js, AWS"
+                  required
+                  minLength={1}
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Separate skills with commas
-                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Candidate List *</label>
+                <Textarea
+                  value={formData.candidateData}
+                  onChange={(e) => setFormData({ ...formData, candidateData: e.target.value })}
+                  placeholder="Paste candidate resumes (one per line)"
+                  required
+                />
               </div>
 
               <div>
@@ -105,33 +146,23 @@ const Shortlist = () => {
                   min="1"
                   max="50"
                   value={formData.numberOfCandidates}
-                  onChange={(e) => setFormData({ ...formData, numberOfCandidates: parseInt(e.target.value) })}
-                  className="bg-background/50 border-primary/30 focus:border-primary focus:ring-primary/20"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Custom Question for AI Bot
-                </label>
-                <Textarea
-                  value={formData.customQuestion}
-                  onChange={(e) => setFormData({ ...formData, customQuestion: e.target.value })}
-                  placeholder="What specific experience do you have with microservices architecture?"
-                  className="bg-background/50 border-primary/30 focus:border-primary focus:ring-primary/20"
+                  onChange={(e) =>
+                    setFormData({ ...formData, numberOfCandidates: parseInt(e.target.value) })
+                  }
                 />
               </div>
 
               <div className="flex space-x-3">
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
+                  disabled={loading}
                   className="flex-1 bg-primary hover:bg-primary/90 glow-primary transition-all duration-300"
                 >
-                  Create Shortlist
+                  {loading ? 'Shortlisting...' : 'Create Shortlist'}
                 </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={handleReset}
                   className="border-primary/30 hover:bg-primary/10"
                 >
@@ -142,12 +173,12 @@ const Shortlist = () => {
           </CardContent>
         </Card>
 
-        {/* File Upload Section */}
+        {/* File Upload */}
         <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <FileText className="w-5 h-5 text-accent" />
-              <span>Job Description</span>
+              <span>Job Description (PDF)</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -155,10 +186,8 @@ const Shortlist = () => {
               {!uploadedFile ? (
                 <div className="border-2 border-dashed border-primary/30 rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
                   <Upload className="w-12 h-12 text-primary mx-auto mb-4" />
-                  <p className="text-foreground font-medium mb-2">Upload Job Description</p>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    PDF files up to 10MB
-                  </p>
+                  <p className="text-foreground font-medium mb-2">Upload JD PDF</p>
+                  <p className="text-sm text-muted-foreground mb-4">PDF only. Max 10MB.</p>
                   <input
                     type="file"
                     accept=".pdf"
@@ -192,21 +221,7 @@ const Shortlist = () => {
                       <X className="w-5 h-5" />
                     </button>
                   </div>
-                  <div className="mt-4 p-3 bg-primary/10 rounded border border-primary/20">
-                    <p className="text-sm text-primary">
-                      PDF preview would be displayed here using PDF.js
-                    </p>
-                  </div>
                 </div>
-              )}
-
-              {uploadedFile && (
-                <Button 
-                  variant="outline" 
-                  className="w-full border-accent/30 text-accent hover:bg-accent/10"
-                >
-                  Preview Job Description
-                </Button>
               )}
             </div>
           </CardContent>

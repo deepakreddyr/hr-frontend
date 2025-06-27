@@ -22,7 +22,7 @@ const Sidebar = () => {
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: FileText, label: 'Process Job', path: '/process' },
+    // { icon: FileText, label: 'Process Job', path: '/process' },
     { icon: History, label: 'History', path: '/history' },
     { icon: Heart, label: 'Saved Profiles', path: '/saved-profiles' },
     { icon: Star, label: 'Final Selects', path: '/final-selects' },

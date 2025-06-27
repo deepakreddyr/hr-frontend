@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Upload, Sparkles, MapPin, Building, Clock, Wifi, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -44,10 +43,37 @@ const Process = () => {
     setFormData({ ...formData, customQuestion: suggestion });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Processing job requirements:', formData);
-    console.log('Uploaded file:', uploadedFile);
+
+    const form = new FormData();
+    form.append("resumeText", formData.bulkResumeData);
+    form.append("hiringCompany", formData.hiringCompany);
+    form.append("companyLocation", formData.companyLocation);
+    form.append("hrCompany", formData.hrCompany);
+    form.append("noticePeriod", formData.noticePeriod);
+    form.append("remoteWork", formData.remoteWork ? "on" : "");
+    form.append("contractH", formData.contractHiring ? "on" : "");
+    form.append("customQuestion", formData.customQuestion);
+    if (uploadedFile) {
+      form.append("csvFile", uploadedFile); // Optional if used later
+    }
+
+    try {
+      const response = await fetch("/api/process", {
+        method: "POST",
+        body: form,
+      });
+
+      if (response.redirected) {
+        window.location.href = response.url;
+      } else {
+        const text = await response.text();
+        console.warn("No redirect. Server response:", text);
+      }
+    } catch (error) {
+      console.error("Failed to submit form:", error);
+    }
   };
 
   const handleClear = () => {
@@ -67,14 +93,12 @@ const Process = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground">Process Job Requirements</h1>
         <p className="text-muted-foreground">Define search criteria and upload candidate data</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Form */}
         <div className="lg:col-span-2">
           <Card className="bg-card/50 backdrop-blur-sm border-primary/20 glow-primary">
             <CardHeader>
@@ -85,7 +109,6 @@ const Process = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Resume Data Upload */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
                     Bulk Resume Data
@@ -121,7 +144,6 @@ const Process = () => {
                   </div>
                 </div>
 
-                {/* Company Details */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
@@ -176,7 +198,6 @@ const Process = () => {
                   </div>
                 </div>
 
-                {/* Toggles */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex items-center space-x-3">
                     <input
@@ -206,7 +227,6 @@ const Process = () => {
                   </div>
                 </div>
 
-                {/* Custom Question */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-sm font-medium text-foreground">
@@ -231,15 +251,15 @@ const Process = () => {
                 </div>
 
                 <div className="flex space-x-3">
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="flex-1 bg-primary hover:bg-primary/90 glow-primary transition-all duration-300"
                   >
                     Submit Process
                   </Button>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     onClick={handleClear}
                     className="border-primary/30 hover:bg-primary/10"
                   >
@@ -251,7 +271,6 @@ const Process = () => {
           </Card>
         </div>
 
-        {/* Suggestions Panel */}
         <div className="lg:col-span-1">
           <Card className="bg-card/50 backdrop-blur-sm border-accent/20">
             <CardHeader>

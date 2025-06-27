@@ -39,6 +39,24 @@ const History = () => {
     navigate(`/results/${searchId}`);
   };
 
+  const handleCreateNewSearch = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/create-search', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (res.ok && data.search_id) {
+        navigate(`/shortlist/${data.search_id}`);
+      } else {
+        alert("Failed to create search.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred while creating a new search.");
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -47,7 +65,10 @@ const History = () => {
           <h1 className="text-3xl font-bold text-foreground">Search History</h1>
           <p className="text-muted-foreground">Track all your recruitment searches and results</p>
         </div>
-        <button className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors glow-primary">
+        <button
+          onClick={handleCreateNewSearch}
+          className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors glow-primary"
+        >
           <Plus className="w-4 h-4" />
           <span>Create New Search</span>
         </button>
@@ -111,8 +132,8 @@ const History = () => {
                       {Array.isArray(search.shortlisted_index)
                         ? search.shortlisted_index.length
                         : (typeof search.shortlisted_index === 'string'
-                            ? JSON.parse(search.shortlisted_index).length
-                            : 0)}
+                          ? JSON.parse(search.shortlisted_index).length
+                          : 0)}
                     </span>
                   </td>
                   <td className="p-4">
@@ -127,6 +148,7 @@ const History = () => {
         </div>
       </div>
 
+      {/* Empty State */}
       {!loading && filteredSearches.length === 0 && (
         <div className="text-center py-12">
           <Search className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />

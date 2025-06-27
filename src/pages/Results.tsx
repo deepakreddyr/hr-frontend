@@ -1,96 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  Phone, 
-  Heart, 
-  UserCheck, 
-  Star, 
-  Filter, 
-  Download, 
-  SortAsc,
-  Search,
-  CheckSquare,
-  Trash2
+import axios from 'axios';
+import {
+  Phone, Heart, UserCheck, Star, Filter, Download, SortAsc, Search, CheckSquare, Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const Results = () => {
   const { searchId } = useParams();
   const navigate = useNavigate();
+  const [candidates, setCandidates] = useState([]);
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCandidates, setSelectedCandidates] = useState<number[]>([]);
   const [sortBy, setSortBy] = useState('match_score');
+  const [loading, setLoading] = useState(true);
 
-  // Mock data
-  const candidates = [
-    {
-      id: 1,
-      name: 'Alex Rodriguez',
-      email: 'alex.rodriguez@email.com',
-      phone: '+1 (555) 123-4567',
-      totalExp: '5 years',
-      relevantExp: '4 years',
-      match_score: 95,
-      call_status: 'completed',
-      liked: true,
-      join_status: false,
-      skills: 'React, TypeScript, AWS',
-      status: 'interviewed'
-    },
-    {
-      id: 2,
-      name: 'Sarah Chen',
-      email: 'sarah.chen@email.com',
-      phone: '+1 (555) 234-5678',
-      totalExp: '3 years',
-      relevantExp: '3 years',
-      match_score: 88,
-      call_status: 'scheduled',
-      liked: false,
-      join_status: false,
-      skills: 'Vue.js, Python, Docker',
-      status: 'pending'
-    },
-    {
-      id: 3,
-      name: 'Michael Johnson',
-      email: 'michael.j@email.com',
-      phone: '+1 (555) 345-6789',
-      totalExp: '7 years',
-      relevantExp: '6 years',
-      match_score: 92,
-      call_status: 'rescheduled',
-      liked: true,
-      join_status: true,
-      skills: 'Angular, Node.js, MongoDB',
-      status: 'offer_extended'
-    },
-    {
-      id: 4,
-      name: 'Emily Davis',
-      email: 'emily.davis@email.com',
-      phone: '+1 (555) 456-7890',
-      totalExp: '4 years',
-      relevantExp: '3 years',
-      match_score: 85,
-      call_status: 'failed',
-      liked: false,
-      join_status: false,
-      skills: 'React Native, iOS, Android',
-      status: 'rejected'
-    }
-  ];
+  useEffect(() => {
+    const fetchCandidates = async () => {
+      try {
+        const res = await axios.get(`/api/results?searchID=${searchId}`);
+        setCandidates(res.data.candidates || []);
+      } catch (error) {
+        console.error("Error fetching candidates:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (searchId) fetchCandidates();
+  }, [searchId]);
 
   const stats = {
     shortlisted: candidates.filter(c => c.match_score >= 85).length,
@@ -100,10 +41,8 @@ const Results = () => {
   };
 
   const handleCandidateSelect = (candidateId: number) => {
-    setSelectedCandidates(prev => 
-      prev.includes(candidateId) 
-        ? prev.filter(id => id !== candidateId)
-        : [...prev, candidateId]
+    setSelectedCandidates(prev =>
+      prev.includes(candidateId) ? prev.filter(id => id !== candidateId) : [...prev, candidateId]
     );
   };
 
@@ -115,33 +54,54 @@ const Results = () => {
     }
   };
 
-  const handleCallCandidate = (candidateId: number) => {
-    console.log('Calling candidate:', candidateId);
+  const handleLikeToggle = async (candidateId: number, currentLiked: boolean) => {
+    try {
+      await axios.post('/like-candidate', {
+        candidate_id: candidateId,
+        liked: !currentLiked
+      });
+      setCandidates(prev =>
+        prev.map(c => (c.id === candidateId ? { ...c, liked: !currentLiked } : c))
+      );
+    } catch (err) {
+      console.error("Failed to toggle like", err);
+    }
   };
 
-  const handleLikeToggle = (candidateId: number) => {
-    console.log('Toggling like for candidate:', candidateId);
-  };
-
-  const handleCallAll = () => {
-    console.log('Calling all candidates');
-  };
-
-  const handleCallSelected = () => {
-    console.log('Calling selected candidates:', selectedCandidates);
-  };
-
-  const handleDeleteSelected = () => {
-    console.log('Deleting selected candidates:', selectedCandidates);
-  };
-
-  const handleAddToFinalSelects = () => {
-    console.log('Adding to final selects:', selectedCandidates);
+  const handleAddToFinalSelects = async () => {
+    try {
+      await axios.post('/add-final-select', {
+        candidate_ids: selectedCandidates
+      });
+      alert("Added to final selects!");
+    } catch (error) {
+      console.error("Failed to add to final selects:", error);
+    }
   };
 
   const handleViewFinalSelects = () => {
     navigate('/final-selects');
   };
+
+  const filteredCandidates = candidates
+    .filter(candidate => {
+      const matchesSearch =
+        candidate.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        candidate.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        candidate.skills.toLowerCase().includes(searchTerm.toLowerCase());
+
+      if (filter === 'liked') return candidate.liked && matchesSearch;
+      if (filter === 'completed') return candidate.call_status === 'completed' && matchesSearch;
+      if (filter === 'high-match') return candidate.match_score >= 90 && matchesSearch;
+
+      return matchesSearch;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'match_score') return b.match_score - a.match_score;
+      if (sortBy === 'name') return a.name.localeCompare(b.name);
+      if (sortBy === 'call_status') return a.call_status.localeCompare(b.call_status);
+      return 0;
+    });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -159,17 +119,13 @@ const Results = () => {
     return 'text-red-400 bg-red-400/20';
   };
 
-  const filteredCandidates = candidates.filter(candidate => {
-    const matchesSearch = candidate.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         candidate.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         candidate.skills.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    if (filter === 'liked') return candidate.liked && matchesSearch;
-    if (filter === 'completed') return candidate.call_status === 'completed' && matchesSearch;
-    if (filter === 'high-match') return candidate.match_score >= 90 && matchesSearch;
-    
-    return matchesSearch;
-  });
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-lg font-medium text-muted-foreground">Loading candidates...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -180,72 +136,41 @@ const Results = () => {
           <p className="text-muted-foreground">Found {candidates.length} candidates for search #{searchId}</p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button 
-            onClick={handleViewFinalSelects}
-            className="bg-accent hover:bg-accent/90 text-white glow-accent"
-          >
+          <Button onClick={handleViewFinalSelects} className="bg-accent hover:bg-accent/90 text-white glow-accent">
             <UserCheck className="w-4 h-4 mr-2" />
             View Final Selects
           </Button>
-          <Button 
-            variant="outline"
-            className="border-primary/30 hover:bg-primary/10"
-          >
+          <Button variant="outline" className="border-primary/30 hover:bg-primary/10">
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
         </div>
       </div>
 
-      {/* Stats Overview */}
+      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Shortlisted Count</p>
-                <p className="text-2xl font-bold text-primary">{stats.shortlisted}</p>
+        {/* Repeat Cards for stats */}
+        {[
+          { label: "Shortlisted Count", value: stats.shortlisted, icon: <CheckSquare />, color: "primary" },
+          { label: "Calls Scheduled", value: stats.callsScheduled, icon: <Phone />, color: "blue-400" },
+          { label: "Re-Scheduled", value: stats.rescheduled, icon: <Phone />, color: "yellow-400" },
+          { label: "Total Found", value: stats.total, icon: <Star />, color: "accent" }
+        ].map((stat, idx) => (
+          <Card key={idx} className={`bg-card/50 backdrop-blur-sm border-${stat.color}/20`}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">{stat.label}</p>
+                  <p className={`text-2xl font-bold text-${stat.color}`}>{stat.value}</p>
+                </div>
+                <div className={`w-8 h-8 text-${stat.color}`}>{stat.icon}</div>
               </div>
-              <CheckSquare className="w-8 h-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/50 backdrop-blur-sm border-blue-400/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Calls Scheduled</p>
-                <p className="text-2xl font-bold text-blue-400">{stats.callsScheduled}</p>
-              </div>
-              <Phone className="w-8 h-8 text-blue-400" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/50 backdrop-blur-sm border-yellow-400/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Re-Scheduled</p>
-                <p className="text-2xl font-bold text-yellow-400">{stats.rescheduled}</p>
-              </div>
-              <Phone className="w-8 h-8 text-yellow-400" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/50 backdrop-blur-sm border-accent/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Found</p>
-                <p className="text-2xl font-bold text-accent">{stats.total}</p>
-              </div>
-              <Star className="w-8 h-8 text-accent" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {/* Filters and Search */}
+      {/* Filters */}
       <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
@@ -255,7 +180,7 @@ const Results = () => {
                 <select
                   value={filter}
                   onChange={(e) => setFilter(e.target.value)}
-                  className="bg-background border border-primary/30 rounded-lg px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="bg-background border border-primary/30 rounded-lg px-3 py-2 text-foreground"
                 >
                   <option value="all">All Candidates</option>
                   <option value="liked">Liked Only</option>
@@ -268,7 +193,7 @@ const Results = () => {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="bg-background border border-primary/30 rounded-lg px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="bg-background border border-primary/30 rounded-lg px-3 py-2 text-foreground"
                 >
                   <option value="match_score">Sort by Match Score</option>
                   <option value="name">Sort by Name</option>
@@ -282,14 +207,14 @@ const Results = () => {
                 placeholder="Search candidates..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-background border-primary/30 focus:border-primary focus:ring-primary/20"
+                className="pl-10 bg-background border-primary/30"
               />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Candidates Table */}
+      {/* Table */}
       <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
@@ -299,7 +224,7 @@ const Results = () => {
                 type="checkbox"
                 checked={selectedCandidates.length === candidates.length}
                 onChange={handleSelectAll}
-                className="w-4 h-4 text-primary bg-background border-primary/30 rounded focus:ring-primary/20"
+                className="w-4 h-4"
               />
               <span className="text-sm text-muted-foreground">Select All</span>
             </div>
@@ -309,7 +234,7 @@ const Results = () => {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="border-primary/20">
+                <TableRow>
                   <TableHead className="w-12"></TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
@@ -322,10 +247,10 @@ const Results = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCandidates.map((candidate) => (
-                  <TableRow 
-                    key={candidate.id} 
-                    className="border-primary/20 hover:bg-primary/5 cursor-pointer"
+                {filteredCandidates.map(candidate => (
+                  <TableRow
+                    key={candidate.id}
+                    className="hover:bg-primary/5 cursor-pointer"
                     onClick={() => navigate(`/transcript/${candidate.id}`)}
                   >
                     <TableCell onClick={(e) => e.stopPropagation()}>
@@ -333,7 +258,6 @@ const Results = () => {
                         type="checkbox"
                         checked={selectedCandidates.includes(candidate.id)}
                         onChange={() => handleCandidateSelect(candidate.id)}
-                        className="w-4 h-4 text-primary bg-background border-primary/30 rounded focus:ring-primary/20"
                       />
                     </TableCell>
                     <TableCell>
@@ -342,15 +266,15 @@ const Results = () => {
                           {candidate.name.split(' ').map(n => n[0]).join('')}
                         </div>
                         <div>
-                          <p className="font-medium text-foreground">{candidate.name}</p>
+                          <p className="font-medium">{candidate.name}</p>
                           <p className="text-xs text-muted-foreground">{candidate.skills}</p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">{candidate.email}</TableCell>
                     <TableCell className="text-muted-foreground">{candidate.phone}</TableCell>
-                    <TableCell className="text-foreground">{candidate.totalExp}</TableCell>
-                    <TableCell className="text-foreground">{candidate.relevantExp}</TableCell>
+                    <TableCell>{candidate.totalExp}</TableCell>
+                    <TableCell>{candidate.relevantExp}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-sm font-medium ${getMatchScoreColor(candidate.match_score)}`}>
                         {candidate.match_score}%
@@ -363,17 +287,10 @@ const Results = () => {
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleCallCandidate(candidate.id)}
-                          className="border-primary/30 text-primary hover:bg-primary/10"
-                        >
-                          Call
-                        </Button>
+                        <Button size="sm" variant="outline" className="border-primary/30">Call</Button>
                         <button
-                          onClick={() => handleLikeToggle(candidate.id)}
-                          className="p-1 hover:bg-accent/10 rounded transition-colors"
+                          onClick={() => handleLikeToggle(candidate.id, candidate.liked)}
+                          className="p-1 hover:bg-accent/10 rounded"
                         >
                           <Heart className={`w-4 h-4 ${candidate.liked ? 'text-red-400 fill-current' : 'text-muted-foreground'}`} />
                         </button>
@@ -392,15 +309,11 @@ const Results = () => {
         <CardContent className="p-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-3">
-              <Button
-                onClick={handleCallAll}
-                className="bg-primary hover:bg-primary/90 glow-primary"
-              >
+              <Button className="bg-primary hover:bg-primary/90">
                 <Phone className="w-4 h-4 mr-2" />
                 Call All
               </Button>
               <Button
-                onClick={handleCallSelected}
                 disabled={selectedCandidates.length === 0}
                 variant="outline"
                 className="border-primary/30 hover:bg-primary/10"
@@ -410,15 +323,6 @@ const Results = () => {
               </Button>
             </div>
             <div className="flex items-center space-x-3">
-              <Button
-                onClick={handleDeleteSelected}
-                disabled={selectedCandidates.length === 0}
-                variant="outline"
-                className="border-red-400/30 text-red-400 hover:bg-red-400/10"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete Selected
-              </Button>
               <Button
                 onClick={handleAddToFinalSelects}
                 disabled={selectedCandidates.length === 0}
@@ -431,14 +335,6 @@ const Results = () => {
           </div>
         </CardContent>
       </Card>
-
-      {filteredCandidates.length === 0 && (
-        <div className="text-center py-12">
-          <UserCheck className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
-          <h3 className="text-lg font-medium text-foreground mb-2">No candidates found</h3>
-          <p className="text-muted-foreground">Try adjusting your search criteria.</p>
-        </div>
-      )}
     </div>
   );
 };
