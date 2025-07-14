@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,14 +13,39 @@ const Account = () => {
     confirmPassword: ''
   });
 
-  // Mock user data
-  const userData = {
-    name: 'John Doe',
-    email: 'john@company.com',
-    organization: 'Tech Corp',
-    role: 'Admin',
-    credits: 250
+  const [userData, setUserData] = useState({
+    name: '',
+    email: '',
+    organization: '',
+    role: 'User',
+    credits: 0
+  });
+
+  const fetchUserData = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/user-profile', {
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setUserData({
+          name: data.name,
+          email: data.email,
+          organization: data.organization,
+          role: 'User',
+          credits: data.creds
+        });
+      } else {
+        console.error(data.error || 'Failed to fetch user profile');
+      }
+    } catch (err) {
+      console.error('Error fetching user profile:', err);
+    }
   };
+
+  useEffect(() => {
+    fetchUserData();
+  }, []);
 
   const handlePasswordChange = (e: React.FormEvent) => {
     e.preventDefault();

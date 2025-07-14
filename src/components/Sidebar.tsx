@@ -26,7 +26,7 @@ const Sidebar = () => {
     { icon: History, label: 'History', path: '/history' },
     { icon: Heart, label: 'Saved Profiles', path: '/saved-profiles' },
     { icon: Star, label: 'Final Selects', path: '/final-selects' },
-    { icon: UserCheck, label: 'Joinees', path: '/joinees' },
+    // { icon: UserCheck, label: 'Joinees', path: '/joinees' },
     { icon: User, label: 'Account', path: '/account' },
     { icon: CreditCard, label: 'Billing', path: '/billing' },
     { icon: Settings, label: 'Settings', path: '/settings' },

@@ -30,7 +30,30 @@ const SavedProfiles = () => {
   );
 
   const handleCandidateClick = (candidateId: number) => {
-    navigate(`/candidate/${candidateId}`);
+    navigate(`/transcript/${candidateId}`);
+  };
+
+  const handleDelete = async (candidateId: number) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/unlike-candidate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ candidate_id: candidateId }),
+      });
+
+      if (response.ok) {
+        setSavedCandidates((prev) =>
+          prev.filter((candidate) => candidate.id !== candidateId)
+        );
+      } else {
+        console.error('Failed to unlike candidate');
+      }
+    } catch (error) {
+      console.error('Error unliking candidate:', error);
+    }
   };
 
   const getMatchScoreColor = (score: number) => {
@@ -154,7 +177,10 @@ const SavedProfiles = () => {
                 <Eye className="w-4 h-4" />
                 <span>View Profile</span>
               </button>
-              <button className="bg-red-500/20 hover:bg-red-500/30 text-red-400 px-3 py-2 rounded-lg text-sm transition-colors">
+              <button
+                onClick={() => handleDelete(candidate.id)}
+                className="bg-red-500/20 hover:bg-red-500/30 text-red-400 px-3 py-2 rounded-lg text-sm transition-colors"
+              >
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>

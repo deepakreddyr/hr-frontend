@@ -11,6 +11,7 @@ const Shortlist = () => {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
+    searchName: '',
     requiredSkills: '',
     numberOfCandidates: 5,
     jobRole: '',
@@ -32,46 +33,45 @@ const Shortlist = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!searchId) return;
+    e.preventDefault();
+    if (!searchId) return;
 
-  setLoading(true);
-  const payload = new FormData();
-  payload.append('skills', formData.requiredSkills);
-  payload.append('jobRole', formData.jobRole);
-  payload.append('numCandidates', formData.numberOfCandidates.toString());
-  payload.append('candidateData', formData.candidateData);
-  if (uploadedFile) {
-    payload.append('jdFile', uploadedFile);
-  }
-
-  try {
-    const res = await fetch(`http://localhost:5000/api/shortlist/${searchId}`, {
-      method: 'POST',
-      credentials: 'include',
-      body: payload,
-      redirect: 'follow', // allow auto-following Flask redirect
-    });
-
-    // Flask will redirect to /process, detect that:
-    if (res.redirected) {
-      window.location.href = res.url; // go to /process
-    } else {
-      const html = await res.text();
-      console.warn("No redirect. HTML response:", html);
-      alert("Shortlist completed, but redirect failed.");
+    setLoading(true);
+    const payload = new FormData();
+    payload.append('searchName', formData.searchName);
+    payload.append('skills', formData.requiredSkills);
+    payload.append('jobRole', formData.jobRole);
+    payload.append('numCandidates', formData.numberOfCandidates.toString());
+    payload.append('candidateData', formData.candidateData);
+    if (uploadedFile) {
+      payload.append('jdFile', uploadedFile);
     }
-  } catch (err) {
-    console.error('Shortlist submit failed:', err);
-    alert('Something went wrong. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
 
+    try {
+      const res = await fetch(`http://localhost:5000/api/shortlist/${searchId}`, {
+        method: 'POST',
+        credentials: 'include',
+        body: payload,
+      });
+
+      const data = await res.json();
+      if (data.success) {
+          window.location.href = `http://localhost:8080/process/${searchId}`; // ✅ full URL redirect
+        } else {
+          alert("Shortlisting failed or no redirect URL.");
+          console.warn(data);
+        }
+    } catch (err) {
+      console.error('Shortlist submit failed:', err);
+      alert('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleReset = () => {
     setFormData({
+      searchName: '',
       requiredSkills: '',
       numberOfCandidates: 5,
       jobRole: '',
@@ -83,7 +83,6 @@ const Shortlist = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Create Shortlist</h1>
@@ -96,7 +95,6 @@ const Shortlist = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Shortlist Form */}
         <Card className="bg-card/50 backdrop-blur-sm border-primary/20 glow-primary">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -106,6 +104,15 @@ const Shortlist = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Search Name *</label>
+                <Input
+                  value={formData.searchName}
+                  onChange={(e) => setFormData({ ...formData, searchName: e.target.value })}
+                  placeholder="e.g., Frontend Hiring - June 2025"
+                  required
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Job Role *</label>
                 <Input
@@ -173,7 +180,6 @@ const Shortlist = () => {
           </CardContent>
         </Card>
 
-        {/* File Upload */}
         <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">

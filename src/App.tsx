@@ -40,7 +40,7 @@ const App = () => (
             <Route path="/results/:searchId" element={<Layout><Results /></Layout>} />
             <Route path="/saved-profiles" element={<Layout><SavedProfiles /></Layout>} />
             <Route path="/shortlist/:searchId" element={<Layout><Shortlist /></Layout>} />
-            <Route path="/process" element={<Layout><Process /></Layout>} />
+            <Route path="/process/:searchId" element={<Layout><Process /></Layout>} />
             <Route path="/transcript/:candidateId" element={<Layout><Transcript /></Layout>} />
             <Route path="/final-selects" element={<Layout><FinalSelects /></Layout>} />
             <Route path="/candidate/:id" element={<Layout><div className="p-8 text-center"><h1 className="text-2xl font-bold text-foreground">Candidate Profile</h1><p className="text-muted-foreground">Coming Soon</p></div></Layout>} />

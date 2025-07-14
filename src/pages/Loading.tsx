@@ -1,10 +1,12 @@
-
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bot, BarChart3, Users, Zap } from 'lucide-react';
 
 const Loading = () => {
   const [loadingText, setLoadingText] = useState('Analyzing resumes...');
   const [progress, setProgress] = useState(0);
+  const [error, setError] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const texts = [
@@ -16,28 +18,82 @@ const Loading = () => {
     ];
 
     let currentIndex = 0;
+
     const textInterval = setInterval(() => {
       currentIndex = (currentIndex + 1) % texts.length;
       setLoadingText(texts[currentIndex]);
     }, 2000);
 
     const progressInterval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) return 0;
+      setProgress((prev) => {
+        if (prev >= 100) return 100;
         return prev + Math.random() * 15;
       });
     }, 300);
 
+    // ✅ First: Trigger backend processing
+    const startProcessing = async () => {
+      try {
+        await fetch('http://localhost:5000/api/loading', {
+          method: 'GET',
+          credentials: 'include',
+        });
+      } catch (err) {
+        console.error('Error triggering processing:', err);
+      }
+    };
+
+    // ✅ Poll until processing is done
+    const checkAndRedirect = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/check-processing', {
+          method: 'GET',
+          credentials: 'include',
+        });
+        const data = await res.json();
+
+        if (res.ok && data.processed) {
+          clearInterval(textInterval);
+          clearInterval(progressInterval);
+          clearInterval(pollInterval);
+          clearTimeout(errorTimeout);
+
+          const searchId = data.search_id || data.searchID || data.id;
+          if (searchId) {
+            navigate(`/results/${searchId}`);
+          } else {
+            navigate('/results');
+          }
+        }
+      } catch (err) {
+        console.error('Polling error:', err);
+      }
+    };
+
+    // ⏯ Start everything
+    startProcessing();
+    const pollInterval = setInterval(checkAndRedirect, 2000);
+
+    const errorTimeout = setTimeout(() => {
+      setLoadingText('Something went wrong. Please refresh or try again.');
+      setError(true);
+      clearInterval(textInterval);
+      clearInterval(progressInterval);
+      clearInterval(pollInterval);
+    }, 20000);
+
     return () => {
       clearInterval(textInterval);
       clearInterval(progressInterval);
+      clearInterval(pollInterval);
+      clearTimeout(errorTimeout);
     };
-  }, []);
+  }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-6">
+    <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-background via-background to-primary/5">
       <div className="text-center space-y-8 max-w-md mx-auto">
-        {/* AI Bot Animation */}
+        {/* Bot & Animations */}
         <div className="relative">
           <div className="w-24 h-24 mx-auto mb-6 relative">
             <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-full animate-pulse-glow"></div>
@@ -45,8 +101,6 @@ const Loading = () => {
               <Bot className="w-12 h-12 text-primary animate-bounce-gentle" />
             </div>
           </div>
-          
-          {/* Floating Icons */}
           <div className="absolute -top-4 -left-8 animate-bounce-gentle" style={{ animationDelay: '0.5s' }}>
             <BarChart3 className="w-6 h-6 text-primary/60" />
           </div>
@@ -68,9 +122,9 @@ const Loading = () => {
           </p>
         </div>
 
-        {/* Typewriter Loading Text */}
+        {/* Loading Text */}
         <div className="h-8 flex items-center justify-center">
-          <p className="text-primary font-medium typewriter text-lg">
+          <p className="text-primary font-medium text-lg animate-fade-in-slow">
             {loadingText}
           </p>
         </div>
@@ -78,7 +132,7 @@ const Loading = () => {
         {/* Progress Bar */}
         <div className="space-y-3 animate-fade-in" style={{ animationDelay: '0.4s' }}>
           <div className="w-full bg-secondary/50 rounded-full h-2 overflow-hidden">
-            <div 
+            <div
               className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-300 ease-out"
               style={{ width: `${Math.min(progress, 100)}%` }}
             ></div>
@@ -87,6 +141,13 @@ const Loading = () => {
             Processing... {Math.round(Math.min(progress, 100))}%
           </p>
         </div>
+
+        {/* Error */}
+        {error && (
+          <p className="text-red-500 text-sm mt-4">
+            Something went wrong. Please refresh the page and try again.
+          </p>
+        )}
 
         {/* Pulsing Dots */}
         <div className="flex justify-center space-x-2 animate-fade-in" style={{ animationDelay: '0.6s' }}>

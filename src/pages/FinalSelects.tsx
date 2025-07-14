@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Phone, 
@@ -11,7 +10,8 @@ import {
   Trash2,
   Search,
   SortAsc,
-  CheckCircle
+  CheckCircle,
+  ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,62 +30,46 @@ const FinalSelects = () => {
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCandidates, setSelectedCandidates] = useState<number[]>([]);
+  const [showBulkMenu, setShowBulkMenu] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{ type: string; count: number } | null>(null);
+  const bulkMenuRef = useRef<HTMLDivElement>(null);
 
   // Mock data for final selected candidates
-  const candidates = [
-    {
-      id: 1,
-      name: 'Alex Rodriguez',
-      email: 'alex.rodriguez@email.com',
-      phone: '+1 (555) 123-4567',
-      totalExp: '5 years',
-      relevantExp: '4 years',
-      matchScore: 95,
-      status: 'interviewed',
-      joined: false,
-      liked: true,
-      skills: 'React, TypeScript, AWS'
-    },
-    {
-      id: 2,
-      name: 'Sarah Chen',
-      email: 'sarah.chen@email.com',
-      phone: '+1 (555) 234-5678',
-      totalExp: '3 years',
-      relevantExp: '3 years',
-      matchScore: 88,
-      status: 'offer_extended',
-      joined: false,
-      liked: true,
-      skills: 'Vue.js, Python, Docker'
-    },
-    {
-      id: 3,
-      name: 'Michael Johnson',
-      email: 'michael.j@email.com',
-      phone: '+1 (555) 345-6789',
-      totalExp: '7 years',
-      relevantExp: '6 years',
-      matchScore: 92,
-      status: 'joined',
-      joined: true,
-      liked: true,
-      skills: 'Angular, Node.js, MongoDB'
-    },
-    {
-      id: 4,
-      name: 'Emily Davis',
-      email: 'emily.davis@email.com',
-      phone: '+1 (555) 456-7890',
-      totalExp: '4 years',
-      relevantExp: '3 years',
-      matchScore: 85,
-      status: 'pending',
-      joined: false,
-      liked: true,
-      skills: 'React Native, iOS, Android'
-    }
-  ];
+  const [candidates, setCandidates] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFinalCandidates = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/final-selects", {
+          credentials: "include",
+        });
+        const data = await res.json();
+        setCandidates(data.candidates || []);
+      } catch (err) {
+        console.error("Failed to fetch final selects", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFinalCandidates();
+  }, []);
+
+  // Close bulk menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (bulkMenuRef.current && !bulkMenuRef.current.contains(event.target as Node)) {
+        setShowBulkMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleCandidateSelect = (candidateId: number) => {
     setSelectedCandidates(prev => 
@@ -103,12 +87,205 @@ const FinalSelects = () => {
     }
   };
 
-  const handleMarkAsJoined = (candidateId: number) => {
-    console.log('Marking candidate as joined:', candidateId);
+  const handleMarkAsJoined = async (candidateId: number, currentStatus: boolean) => {
+    try {
+      const res = await fetch("http://localhost:5000/api/final-selects", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          joined: [{ candidate_id: candidateId, joined: !currentStatus }]
+        })
+      });
+
+      const data = await res.json();
+      if (data.status === "success") {
+        setCandidates(prev =>
+          prev.map(candidate =>
+            candidate.id === candidateId
+              ? { ...candidate, joined: !currentStatus }
+              : candidate
+          )
+        );
+      } else {
+        console.error("Failed to update join status:", data);
+      }
+    } catch (err) {
+      console.error("Failed to update join status", err);
+    }
   };
 
-  const handleRemoveFromFinalList = (candidateId: number) => {
-    console.log('Removing candidate from final list:', candidateId);
+  const handleRemoveFromFinalList = async (candidateId: number) => {
+    try {
+      const res = await fetch("http://localhost:5000/api/remove-final-select", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ candidate_id: candidateId })
+      });
+
+      const data = await res.json();
+      if (data.status === "success") {
+        setCandidates(prev => prev.filter(c => c.id !== candidateId));
+      }
+    } catch (err) {
+      console.error("Failed to remove candidate from final list", err);
+    }
+  };
+
+  // Bulk action handlers
+  const handleBulkMarkAsJoined = async () => {
+    try {
+      const joinedUpdates = selectedCandidates.map(candidateId => ({
+        candidate_id: candidateId,
+        joined: true
+      }));
+
+      const res = await fetch("http://localhost:5000/api/final-selects", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ joined: joinedUpdates })
+      });
+
+      const data = await res.json();
+      if (data.status === "success") {
+        setCandidates(prev =>
+          prev.map(candidate =>
+            selectedCandidates.includes(candidate.id)
+              ? { ...candidate, joined: true }
+              : candidate
+          )
+        );
+        setSelectedCandidates([]);
+        setShowBulkMenu(false);
+      }
+    } catch (err) {
+      console.error("Failed to bulk update join status", err);
+    }
+  };
+
+  const handleBulkUndoJoined = async () => {
+    try {
+      const joinedUpdates = selectedCandidates.map(candidateId => ({
+        candidate_id: candidateId,
+        joined: false
+      }));
+
+      const res = await fetch("http://localhost:5000/api/final-selects", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ joined: joinedUpdates })
+      });
+
+      const data = await res.json();
+      if (data.status === "success") {
+        setCandidates(prev =>
+          prev.map(candidate =>
+            selectedCandidates.includes(candidate.id)
+              ? { ...candidate, joined: false }
+              : candidate
+          )
+        );
+        setSelectedCandidates([]);
+        setShowBulkMenu(false);
+      }
+    } catch (err) {
+      console.error("Failed to bulk undo join status", err);
+    }
+  };
+
+  const handleBulkDelete = () => {
+    setConfirmAction({ type: 'delete', count: selectedCandidates.length });
+    setShowConfirmDialog(true);
+    setShowBulkMenu(false);
+  };
+
+  const confirmBulkAction = async () => {
+    if (!confirmAction) return;
+
+    try {
+      const res = await fetch("http://localhost:5000/api/final-selects", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ 
+          remove_from_final: selectedCandidates 
+        })
+      });
+
+      const data = await res.json();
+      if (data.status === "success") {
+        setCandidates(prev => prev.filter(c => !selectedCandidates.includes(c.id)));
+        setSelectedCandidates([]);
+        setShowConfirmDialog(false);
+        setConfirmAction(null);
+      }
+    } catch (err) {
+      console.error("Failed to bulk delete candidates", err);
+    }
+  };
+
+  const cancelBulkAction = () => {
+    setShowConfirmDialog(false);
+    setConfirmAction(null);
+  };
+
+  const handleExportCSV = () => {
+    // Define CSV headers
+    const headers = [
+      'Name',
+      'Email', 
+      'Phone',
+      'Skills',
+      'Total Experience',
+      'Relevant Experience',
+      'Match Score (%)',
+      'Status',
+      'Joined',
+      'Summary'
+    ];
+
+    // Convert candidates data to CSV format
+    const csvData = filteredCandidates.map(candidate => [
+      candidate.name,
+      candidate.email,
+      candidate.phone,
+      candidate.skills,
+      candidate.totalExp,
+      candidate.relevantExp,
+      candidate.matchScore,
+      candidate.status.replace('_', ' '),
+      candidate.joined ? 'Yes' : 'No',
+      candidate.summary?.replace(/,/g, ';') || '' // Replace commas to avoid CSV issues
+    ]);
+
+    // Combine headers and data
+    const csvContent = [headers, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+
+    // Create and download the CSV file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `final_selects_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const getStatusColor = (status: string) => {
@@ -153,18 +330,58 @@ const FinalSelects = () => {
           <Button
             variant="outline"
             className="border-accent/30 text-accent hover:bg-accent/10"
+            onClick={handleExportCSV}
           >
             <Download className="w-4 h-4 mr-2" />
             Export List
           </Button>
-          <Button
-            variant="outline"
-            className="border-primary/30 text-primary hover:bg-primary/10"
-            disabled={selectedCandidates.length === 0}
-          >
-            <UserCheck className="w-4 h-4 mr-2" />
-            Bulk Actions ({selectedCandidates.length})
-          </Button>
+          <div className="relative" ref={bulkMenuRef}>
+            <Button
+              variant="outline"
+              className="border-primary/30 text-primary hover:bg-primary/10"
+              disabled={selectedCandidates.length === 0}
+              onClick={() => setShowBulkMenu(!showBulkMenu)}
+            >
+              <UserCheck className="w-4 h-4 mr-2" />
+              Bulk Actions ({selectedCandidates.length})
+              <ChevronDown className="w-4 h-4 ml-1" />
+            </Button>
+            
+            {/* Bulk Actions Menu */}
+            {showBulkMenu && selectedCandidates.length > 0 && (
+              <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-primary/20 rounded-lg shadow-lg backdrop-blur-sm z-50">
+                <div className="p-2 space-y-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="w-full justify-start text-green-400 hover:bg-green-400/10 hover:text-green-400"
+                    onClick={handleBulkMarkAsJoined}
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Mark as Joined
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="w-full justify-start text-yellow-400 hover:bg-yellow-400/10 hover:text-yellow-400"
+                    onClick={handleBulkUndoJoined}
+                  >
+                    <UserCheck className="w-4 h-4 mr-2" />
+                    Undo Joined
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="w-full justify-start text-red-400 hover:bg-red-400/10 hover:text-red-400"
+                    onClick={handleBulkDelete}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -191,19 +408,6 @@ const FinalSelects = () => {
                 </p>
               </div>
               <CheckCircle className="w-8 h-8 text-green-400" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/50 backdrop-blur-sm border-yellow-400/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">In Process</p>
-                <p className="text-2xl font-bold text-yellow-400">
-                  {candidates.filter(c => !c.joined && c.status !== 'pending').length}
-                </p>
-              </div>
-              <UserCheck className="w-8 h-8 text-yellow-400" />
             </div>
           </CardContent>
         </Card>
@@ -300,7 +504,7 @@ const FinalSelects = () => {
                   <TableRow 
                     key={candidate.id} 
                     className="border-primary/20 hover:bg-primary/5 cursor-pointer"
-                    onClick={() => navigate(`/candidate/${candidate.id}`)}
+                    onClick={() => navigate(`/transcript/${candidate.id}`)}
                   >
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <input
@@ -344,16 +548,19 @@ const FinalSelects = () => {
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center space-x-2">
-                        {!candidate.joined && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleMarkAsJoined(candidate.id)}
-                            className="border-green-400/30 text-green-400 hover:bg-green-400/10"
-                          >
-                            Mark Joined
-                          </Button>
-                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleMarkAsJoined(candidate.id, candidate.joined)}
+                          className={`${
+                            candidate.joined
+                              ? 'border-yellow-400/30 text-yellow-400 hover:bg-yellow-400/10'
+                              : 'border-green-400/30 text-green-400 hover:bg-green-400/10'
+                          }`}
+                        >
+                          {candidate.joined ? 'Undo Joined' : 'Mark Joined'}
+                        </Button>
+
                         <Button
                           size="sm"
                           variant="outline"
@@ -379,6 +586,44 @@ const FinalSelects = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-200">
+          <div className="bg-card border border-destructive/30 rounded-lg p-6 max-w-md w-full mx-4 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 bg-destructive/20 rounded-full flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-destructive" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Confirm Deletion</h3>
+                <p className="text-sm text-muted-foreground">This action cannot be undone</p>
+              </div>
+            </div>
+            
+            <p className="text-foreground mb-6">
+              Are you sure you want to remove <span className="font-semibold text-destructive">{confirmAction?.count}</span> candidates from the final list?
+            </p>
+            
+            <div className="flex justify-end space-x-3">
+              <Button
+                variant="outline"
+                onClick={cancelBulkAction}
+                className="border-border hover:bg-muted"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmBulkAction}
+                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Remove {confirmAction?.count} Candidates
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

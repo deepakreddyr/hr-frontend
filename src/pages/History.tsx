@@ -35,9 +35,32 @@ const History = () => {
     );
   });
 
-  const handleRowClick = (searchId: number) => {
-    navigate(`/results/${searchId}`);
+  const handleRowClick = async (searchId: number) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/search-status/${searchId}`, {
+        credentials: 'include',
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.status) {
+        console.error("Could not fetch status for search ID:", searchId);
+        return;
+      }
+
+      const status = data.status;
+
+      if (status === "shortlist") {
+        navigate(`/shortlist/${searchId}`);
+      } else if (status === "process") {
+        navigate(`/process/${searchId}`);
+      } else if (status === "result"){
+        navigate(`/results/${searchId}`);
+      }
+    } catch (error) {
+      console.error("Error fetching search status:", error);
+    }
   };
+
 
   const handleCreateNewSearch = async () => {
     try {

@@ -18,12 +18,30 @@ const Results = () => {
   const [selectedCandidates, setSelectedCandidates] = useState<number[]>([]);
   const [sortBy, setSortBy] = useState('match_score');
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    shortlisted: 0,
+    callsScheduled: 0,
+    rescheduled: 0,
+    total: 0
+  });
+  const [showCallSuccess, setShowCallSuccess] = useState(false);
+  const [callSuccessName, setCallSuccessName] = useState('');
+  const [showFinalSuccess, setShowFinalSuccess] = useState(false);
 
   useEffect(() => {
     const fetchCandidates = async () => {
       try {
-        const res = await axios.get(`/api/results?searchID=${searchId}`);
+        const res = await axios.get(`http://localhost:5000/api/results?searchID=${searchId}`, {
+        withCredentials: true,
+      });
+        console.log(res);
         setCandidates(res.data.candidates || []);
+        setStats({
+          shortlisted: res.data.total,
+          callsScheduled: res.data.calls_scheduled,
+          rescheduled: res.data.rescheduled_calls,
+          total: res.data.total
+        });
       } catch (error) {
         console.error("Error fetching candidates:", error);
       } finally {
@@ -33,12 +51,6 @@ const Results = () => {
     if (searchId) fetchCandidates();
   }, [searchId]);
 
-  const stats = {
-    shortlisted: candidates.filter(c => c.match_score >= 85).length,
-    callsScheduled: candidates.filter(c => c.call_status === 'scheduled').length,
-    rescheduled: candidates.filter(c => c.call_status === 'rescheduled').length,
-    total: candidates.length
-  };
 
   const handleCandidateSelect = (candidateId: number) => {
     setSelectedCandidates(prev =>
@@ -56,7 +68,8 @@ const Results = () => {
 
   const handleLikeToggle = async (candidateId: number, currentLiked: boolean) => {
     try {
-      await axios.post('/like-candidate', {
+      await axios.post('http://localhost:5000/like-candidate', {
+        withCredentials: true,
         candidate_id: candidateId,
         liked: !currentLiked
       });
@@ -70,10 +83,15 @@ const Results = () => {
 
   const handleAddToFinalSelects = async () => {
     try {
-      await axios.post('/add-final-select', {
+      await axios.post('http://localhost:5000/add-final-select', {
+        withCredentials: true,
         candidate_ids: selectedCandidates
       });
-      alert("Added to final selects!");
+      setShowFinalSuccess(true);
+
+    setTimeout(() => {
+      setShowFinalSuccess(false);
+    }, 3000);
     } catch (error) {
       console.error("Failed to add to final selects:", error);
     }
@@ -82,6 +100,78 @@ const Results = () => {
   const handleViewFinalSelects = () => {
     navigate('/final-selects');
   };
+
+  const handleCallCandidate = async (candidate) => {
+  try {
+    const res = await axios.post('http://localhost:5000/call-single', {
+      name: candidate.name,
+      phone: candidate.phone,
+      skills: candidate.skills,
+      company: candidate.company || '',
+      candidate_id: candidate.id,
+    }, { withCredentials: true });
+
+    setCallSuccessName(candidate.name);
+    setShowCallSuccess(true);
+
+    // Hide the message after 3 seconds
+    setTimeout(() => {
+      setShowCallSuccess(false);
+    }, 3000);
+  } catch (error) {
+    console.error("Failed to call candidate", error);
+    alert("Failed to call candidate.");
+  }
+};
+
+const handleCallSelectedCandidates = async () => {
+  try {
+    const selected = candidates.filter(c => selectedCandidates.includes(c.id));
+    const payload = selected.map(c => ({
+      name: c.name,
+      phone: c.phone,
+      skills: c.skills,
+      company: c.company || '',
+      candidate_id: c.id
+    }));
+
+    const res = await axios.post('http://localhost:5000/call', {
+      candidates: payload
+    }, { withCredentials: true });
+
+    
+    setShowCallSuccess(true);
+
+    // Hide the message after 3 seconds
+    setTimeout(() => {
+      setShowCallSuccess(false);
+    }, 3000);
+  } catch (error) {
+    console.error("Failed to call selected candidates", error);
+    alert("Failed to initiate calls.");
+  }
+};
+
+const handleCallAllCandidates = async () => {
+  try {
+    const payload = candidates.map(c => ({
+      name: c.name,
+      phone: c.phone,
+      skills: c.skills,
+      company: c.company || '',
+      candidate_id: c.id
+    }));
+
+    const res = await axios.post('http://localhost:5000/call', {
+      candidates: payload
+    }, { withCredentials: true });
+
+    alert("Calls initiated for all candidates");
+  } catch (error) {
+    console.error("Failed to call all candidates", error);
+    alert("Failed to initiate calls.");
+  }
+};
 
   const filteredCandidates = candidates
     .filter(candidate => {
@@ -287,12 +377,23 @@ const Results = () => {
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center space-x-2">
-                        <Button size="sm" variant="outline" className="border-primary/30">Call</Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-primary/30"
+                          onClick={() => handleCallCandidate(candidate)}  // <-- updated
+                        >
+                          Call
+                        </Button>
                         <button
                           onClick={() => handleLikeToggle(candidate.id, candidate.liked)}
                           className="p-1 hover:bg-accent/10 rounded"
                         >
-                          <Heart className={`w-4 h-4 ${candidate.liked ? 'text-red-400 fill-current' : 'text-muted-foreground'}`} />
+                          <Heart
+                            className={`w-4 h-4 ${
+                              candidate.liked ? 'text-red-400 fill-current' : 'text-muted-foreground'
+                            }`}
+                          />
                         </button>
                       </div>
                     </TableCell>
@@ -309,7 +410,7 @@ const Results = () => {
         <CardContent className="p-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-3">
-              <Button className="bg-primary hover:bg-primary/90">
+              <Button className="bg-primary hover:bg-primary/90" onClick={handleCallAllCandidates}>
                 <Phone className="w-4 h-4 mr-2" />
                 Call All
               </Button>
@@ -317,6 +418,7 @@ const Results = () => {
                 disabled={selectedCandidates.length === 0}
                 variant="outline"
                 className="border-primary/30 hover:bg-primary/10"
+                onClick={handleCallSelectedCandidates}
               >
                 <Phone className="w-4 h-4 mr-2" />
                 Call Selected ({selectedCandidates.length})
@@ -335,6 +437,17 @@ const Results = () => {
           </div>
         </CardContent>
       </Card>
+      {showCallSuccess && (
+      <div className="fixed bottom-5 right-5 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg animate-slide-up z-50">
+        ✅ Call to <strong>{callSuccessName}</strong> initiated successfully!
+      </div>
+    )}
+    {showFinalSuccess && (
+  <div className="fixed bottom-5 right-5 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg animate-slide-up z-50">
+    🎉 Selected candidates added to <strong>Final Selects</strong>!
+  </div>
+)}
+  
     </div>
   );
 };

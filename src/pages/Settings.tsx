@@ -1,26 +1,59 @@
-
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import {
+  Card, CardContent, CardDescription, CardHeader, CardTitle
+} from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Settings as SettingsIcon, Palette, Phone, Bell, Save, Moon, Sun } from 'lucide-react';
+import {
+  Settings as SettingsIcon,
+  Palette,
+  Bell,
+  Save,
+  Moon,
+  Sun,
+  // Phone // uncomment if you want to restore call prefs
+} from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
 const Settings = () => {
   const { isDark, toggleTheme } = useTheme();
+
   const [settings, setSettings] = useState({
-    voiceGender: 'female',
-    callSpeed: 'normal',
-    reschedule: true,
     emailAlerts: true,
     weeklyReports: false,
-    creditWarnings: true
+    creditWarnings: true,
+    // Optional call prefs - currently commented
+    // voiceGender: 'female',
+    // callSpeed: 'normal',
+    // reschedule: true
   });
 
+  // Fetch settings on load
+  useEffect(() => {
+    axios.get('http://localhost:5000/api/settings', { withCredentials: true })
+      .then(res => {
+        const data = res.data;
+        setSettings({
+          emailAlerts: data.emailAlerts,
+          weeklyReports: data.weeklyReports,
+          creditWarnings: data.creditWarnings
+        });
+
+        if (data.darkTheme !== isDark) toggleTheme();
+      })
+      .catch(err => console.error("Failed to fetch settings:", err));
+  }, []);
+
+  // Save settings
   const handleSave = () => {
-    console.log('Settings saved:', settings);
+    axios.post('http://localhost:5000/api/settings', {
+      ...settings,
+      darkTheme: isDark
+    }, { withCredentials: true })
+      .then(() => console.log("Settings saved"))
+      .catch(err => console.error("Failed to save settings:", err));
   };
 
   return (
@@ -37,7 +70,7 @@ const Settings = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Theme Settings */}
+        {/* Appearance Settings */}
         <Card className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 animate-slide-up">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -57,7 +90,7 @@ const Settings = () => {
                   <p className="text-muted-foreground text-sm">Toggle between dark and light theme</p>
                 </div>
               </div>
-              <Switch 
+              <Switch
                 checked={isDark}
                 onCheckedChange={toggleTheme}
                 className="data-[state=checked]:bg-primary"
@@ -66,7 +99,9 @@ const Settings = () => {
           </CardContent>
         </Card>
 
-        {/* Call Preferences */}
+        {/*
+        // Uncomment this block if you want to restore Call Preferences
+
         <Card className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 animate-slide-up" style={{ animationDelay: '0.1s' }}>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -114,6 +149,7 @@ const Settings = () => {
             </div>
           </CardContent>
         </Card>
+        */}
 
         {/* Notification Settings */}
         <Card className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 lg:col-span-2 animate-slide-up" style={{ animationDelay: '0.2s' }}>
@@ -131,7 +167,7 @@ const Settings = () => {
                   <Label className="text-foreground font-medium">Email Alerts</Label>
                   <p className="text-muted-foreground text-sm">Receive important notifications via email</p>
                 </div>
-                <Switch 
+                <Switch
                   checked={settings.emailAlerts}
                   onCheckedChange={(checked) => setSettings(prev => ({ ...prev, emailAlerts: checked }))}
                   className="data-[state=checked]:bg-primary"
@@ -142,7 +178,7 @@ const Settings = () => {
                   <Label className="text-foreground font-medium">Weekly Reports</Label>
                   <p className="text-muted-foreground text-sm">Get weekly summaries of your activity</p>
                 </div>
-                <Switch 
+                <Switch
                   checked={settings.weeklyReports}
                   onCheckedChange={(checked) => setSettings(prev => ({ ...prev, weeklyReports: checked }))}
                   className="data-[state=checked]:bg-primary"
@@ -153,7 +189,7 @@ const Settings = () => {
                   <Label className="text-foreground font-medium">Credit Warnings</Label>
                   <p className="text-muted-foreground text-sm">Alert when credits are running low</p>
                 </div>
-                <Switch 
+                <Switch
                   checked={settings.creditWarnings}
                   onCheckedChange={(checked) => setSettings(prev => ({ ...prev, creditWarnings: checked }))}
                   className="data-[state=checked]:bg-primary"

@@ -1,12 +1,22 @@
-
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import emailjs from 'emailjs-com';
+import {
+  Card, CardContent, CardDescription, CardHeader, CardTitle
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { HelpCircle, MessageCircle, Mail, FileText, Shield, Send } from 'lucide-react';
+import {
+  Accordion, AccordionContent, AccordionItem, AccordionTrigger
+} from '@/components/ui/accordion';
+import {
+  HelpCircle, MessageCircle, Mail, FileText, Shield, Send
+} from 'lucide-react';
+
+const SERVICE_ID = "your_service_id";
+const TEMPLATE_ID = "your_template_id";
+const PUBLIC_KEY = "your_public_key";
 
 const Help = () => {
   const [supportForm, setSupportForm] = useState({
@@ -14,10 +24,30 @@ const Help = () => {
     message: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Support form submitted:', supportForm);
-    setSupportForm({ subject: '', message: '' });
+
+    try {
+      const templateParams = {
+        subject: supportForm.subject,
+        message: supportForm.message,
+      };
+
+      const res = await emailjs.send(
+        SERVICE_ID,
+        TEMPLATE_ID,
+        templateParams,
+        PUBLIC_KEY
+      );
+
+      console.log("SUCCESS:", res.status, res.text);
+      alert("Message sent successfully!");
+      setSupportForm({ subject: '', message: '' });
+
+    } catch (err) {
+      console.error("EmailJS error:", err);
+      alert("Failed to send message. Please try again.");
+    }
   };
 
   const faqs = [
@@ -101,6 +131,7 @@ const Help = () => {
                     value={supportForm.subject}
                     onChange={(e) => setSupportForm(prev => ({ ...prev, subject: e.target.value }))}
                     placeholder="Briefly describe your issue"
+                    required
                     className="bg-background/50 border-border/50 focus:ring-primary focus:border-primary"
                   />
                 </div>
@@ -112,6 +143,7 @@ const Help = () => {
                     onChange={(e) => setSupportForm(prev => ({ ...prev, message: e.target.value }))}
                     placeholder="Describe your issue in detail..."
                     rows={6}
+                    required
                     className="bg-background/50 border-border/50 focus:ring-primary focus:border-primary resize-none"
                   />
                 </div>
@@ -139,7 +171,6 @@ const Help = () => {
                   <p className="text-primary text-sm">support@hyperx.ai</p>
                 </div>
               </div>
-              
               <div className="flex items-center space-x-3 p-3 bg-secondary/20 rounded-lg opacity-60">
                 <MessageCircle className="w-5 h-5 text-muted-foreground" />
                 <div>
