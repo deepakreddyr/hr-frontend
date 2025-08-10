@@ -40,7 +40,7 @@ const Billing = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/billing-data', { withCredentials: true })
+    axios.get(`${REACT_APP_API_URL}/api/billing-data`, { withCredentials: true })
       .then((res) => {
         const data = res.data;
         setCurrentCredits(data.current_credits || 0);

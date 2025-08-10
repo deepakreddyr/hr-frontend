@@ -10,7 +10,7 @@ const SavedProfiles = () => {
   useEffect(() => {
     const fetchSavedCandidates = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/get-liked-candiates', {
+        const response = await fetch(`${REACT_APP_API_URL}/api/get-liked-candiates`, {
           credentials: 'include',
         });
         const data = await response.json();
@@ -35,7 +35,7 @@ const SavedProfiles = () => {
 
   const handleDelete = async (candidateId: number) => {
     try {
-      const response = await fetch('http://localhost:5000/api/unlike-candidate', {
+      const response = await fetch(`${REACT_APP_API_URL}/api/unlike-candidate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

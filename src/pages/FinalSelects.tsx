@@ -42,7 +42,7 @@ const FinalSelects = () => {
   useEffect(() => {
     const fetchFinalCandidates = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/final-selects", {
+        const res = await fetch(`${REACT_APP_API_URL}/api/final-selects`, {
           credentials: "include",
         });
         const data = await res.json();
@@ -89,7 +89,7 @@ const FinalSelects = () => {
 
   const handleMarkAsJoined = async (candidateId: number, currentStatus: boolean) => {
     try {
-      const res = await fetch("http://localhost:5000/api/final-selects", {
+      const res = await fetch(`${REACT_APP_API_URL}/api/final-selects`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -119,7 +119,7 @@ const FinalSelects = () => {
 
   const handleRemoveFromFinalList = async (candidateId: number) => {
     try {
-      const res = await fetch("http://localhost:5000/api/remove-final-select", {
+      const res = await fetch(`${REACT_APP_API_URL}/api/remove-final-select`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -145,7 +145,7 @@ const FinalSelects = () => {
         joined: true
       }));
 
-      const res = await fetch("http://localhost:5000/api/final-selects", {
+      const res = await fetch(`${REACT_APP_API_URL}/api/final-selects`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -178,7 +178,7 @@ const FinalSelects = () => {
         joined: false
       }));
 
-      const res = await fetch("http://localhost:5000/api/final-selects", {
+      const res = await fetch(`${REACT_APP_API_URL}/api/final-selects`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -214,7 +214,7 @@ const FinalSelects = () => {
     if (!confirmAction) return;
 
     try {
-      const res = await fetch("http://localhost:5000/api/final-selects", {
+      const res = await fetch(`${REACT_APP_API_URL}/api/final-selects`, {
         method: "POST",
         credentials: "include",
         headers: {

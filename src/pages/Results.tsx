@@ -31,7 +31,7 @@ const Results = () => {
   useEffect(() => {
     const fetchCandidates = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/results?searchID=${searchId}`, {
+        const res = await axios.get(`${REACT_APP_API_URL}/api/results?searchID=${searchId}`, {
         withCredentials: true,
       });
         console.log(res);
@@ -68,7 +68,7 @@ const Results = () => {
 
   const handleLikeToggle = async (candidateId: number, currentLiked: boolean) => {
     try {
-      await axios.post('http://localhost:5000/like-candidate', {
+      await axios.post(`${REACT_APP_API_URL}/like-candidate`, {
         withCredentials: true,
         candidate_id: candidateId,
         liked: !currentLiked
@@ -83,7 +83,7 @@ const Results = () => {
 
   const handleAddToFinalSelects = async () => {
     try {
-      await axios.post('http://localhost:5000/add-final-select', {
+      await axios.post(`${REACT_APP_API_URL}/add-final-select`, {
         withCredentials: true,
         candidate_ids: selectedCandidates
       });
@@ -103,7 +103,7 @@ const Results = () => {
 
   const handleCallCandidate = async (candidate) => {
   try {
-    const res = await axios.post('http://localhost:5000/call-single', {
+    const res = await axios.post(`${REACT_APP_API_URL}/call-single`, {
       name: candidate.name,
       phone: candidate.phone,
       skills: candidate.skills,
@@ -135,7 +135,7 @@ const handleCallSelectedCandidates = async () => {
       candidate_id: c.id
     }));
 
-    const res = await axios.post('http://localhost:5000/call', {
+    const res = await axios.post(`${REACT_APP_API_URL}/call`, {
       candidates: payload
     }, { withCredentials: true });
 
@@ -162,7 +162,7 @@ const handleCallAllCandidates = async () => {
       candidate_id: c.id
     }));
 
-    const res = await axios.post('http://localhost:5000/call', {
+    const res = await axios.post(`${REACT_APP_API_URL}/call`, {
       candidates: payload
     }, { withCredentials: true });
 

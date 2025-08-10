@@ -34,7 +34,7 @@ const Loading = () => {
     // ✅ First: Trigger backend processing
     const startProcessing = async () => {
       try {
-        await fetch('http://localhost:5000/api/loading', {
+        await fetch(`${REACT_APP_API_URL}/api/loading`, {
           method: 'GET',
           credentials: 'include',
         });
@@ -46,7 +46,7 @@ const Loading = () => {
     // ✅ Poll until processing is done
     const checkAndRedirect = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/check-processing', {
+        const res = await fetch('${REACT_APP_API_URL}/api/check-processing', {
           method: 'GET',
           credentials: 'include',
         });

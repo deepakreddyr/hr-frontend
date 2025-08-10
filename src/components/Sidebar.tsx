@@ -34,21 +34,17 @@ const Sidebar = () => {
   ];
 
   const handleLogout = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/logout', {
-        method: 'GET',
-        credentials: 'include', // send session cookie
-      });
-
-      if (response.redirected) {
-        window.location.href = response.url; // follow redirect to /login
-      } else {
-        window.location.href = '/login'; // fallback if no redirect
-      }
-    } catch (error) {
-      console.error('Logout failed:', error);
-      alert('Logout failed. Please try again.');
+    const response = await fetch(`${REACT_APP_API_URL}/logout`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    const data = await response.json();
+    if (data.success) {
+      window.location.href = '/login';
+    } else {
+      alert('Logout failed: ' + data.message);
     }
+
   };
 
   return (

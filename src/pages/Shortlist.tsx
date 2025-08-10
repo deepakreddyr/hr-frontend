@@ -48,7 +48,7 @@ const Shortlist = () => {
     }
 
     try {
-      const res = await fetch(`http://localhost:5000/api/shortlist/${searchId}`, {
+      const res = await fetch(`${REACT_APP_API_URL}/api/shortlist/${searchId}`, {
         method: 'POST',
         credentials: 'include',
         body: payload,

@@ -19,7 +19,7 @@ const Transcript = () => {
   useEffect(() => {
     const fetchTranscriptData = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/transcript/${candidateId}`, {
+        const res = await fetch(`${REACT_APP_API_URL}/api/transcript/${candidateId}`, {
           credentials: 'include',
         });
         const data = await res.json();

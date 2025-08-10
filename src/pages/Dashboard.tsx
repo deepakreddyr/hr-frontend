@@ -8,24 +8,44 @@ import {
 } from 'recharts';
 
 const Dashboard = () => {
-  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [usageData, setUsageData] = useState([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/dashboard', {
-          credentials: 'include',
+        setError(null);
+        
+        // FIXED: Properly configured fetch with credentials
+        const res = await fetch(`${REACT_APP_API_URL}/api/dashboard`, {
+          method: 'GET',
+          credentials: 'include',  // This is crucial for sending cookies
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
         });
+
         const data = await res.json();
+        
         if (res.ok) {
           setDashboardData(data);
           setUsageData(data.weekly_activity || []);
         } else {
+          // Handle different types of errors
+          if (res.status === 401) {
+            setError("Session expired. Please login again.");
+            // Optionally redirect to login page
+            // window.location.href = '/login';
+          } else {
+            setError(data.error || "Failed to fetch dashboard data");
+          }
           console.error("Error fetching dashboard data:", data.error);
         }
       } catch (error) {
+        setError("Network error. Please check your connection.");
         console.error("Failed to load dashboard data:", error);
       } finally {
         setLoading(false);
@@ -35,12 +55,59 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
+  // Add a function to check session status (for debugging)
+  const checkSession = async () => {
+    try {
+      const res = await fetch(`${REACT_APP_API_URL}/api/session-check`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await res.json();
+      console.log("Session status:", data);
+    } catch (error) {
+      console.error("Session check failed:", error);
+    }
+  };
+
   if (loading) {
-    return <div className="text-center py-10 text-muted-foreground">Loading dashboard...</div>;
+    return (
+      <div className="text-center py-10 text-muted-foreground">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+        Loading dashboard...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-10">
+        <div className="text-red-500 mb-4">{error}</div>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90"
+        >
+          Retry
+        </button>
+        {/* Debug button - remove in production */}
+        <button 
+          onClick={checkSession} 
+          className="ml-2 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+        >
+          Check Session (Debug)
+        </button>
+      </div>
+    );
   }
 
   if (!dashboardData) {
-    return <div className="text-center py-10 text-red-500">Failed to load dashboard data.</div>;
+    return (
+      <div className="text-center py-10 text-red-500">
+        No dashboard data available.
+      </div>
+    );
   }
 
   return (
