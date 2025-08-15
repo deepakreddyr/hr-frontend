@@ -19,7 +19,7 @@ const Transcript = () => {
   useEffect(() => {
     const fetchTranscriptData = async () => {
       try {
-        const res = await fetch(`${process.env.REACT_APP_API_URL}/api/transcript/${candidateId}`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/transcript/${candidateId}`, {
           credentials: 'include',
         });
         const data = await res.json();

@@ -10,7 +10,7 @@ const History = () => {
 
   const fetchSearches = async () => {
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/searches`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/searches`, {
         credentials: 'include',
       });
       const data = await res.json();
@@ -37,7 +37,7 @@ const History = () => {
 
   const handleRowClick = async (searchId: number) => {
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/search-status/${searchId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/search-status/${searchId}`, {
         credentials: 'include',
       });
       const data = await res.json();
@@ -64,7 +64,7 @@ const History = () => {
 
   const handleCreateNewSearch = async () => {
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/create-search`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/create-search`, {
         method: 'POST',
         credentials: 'include',
       });

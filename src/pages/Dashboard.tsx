@@ -12,14 +12,14 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [usageData, setUsageData] = useState([]);
-  console.log(process.env.REACT_APP_API_URL);
+  console.log(import.meta.env.VITE_API_URL);
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setError(null);
         
         // FIXED: Properly configured fetch with credentials
-        const res = await fetch(`${process.env.REACT_APP_API_URL}/api/dashboard`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard`, {
           method: 'GET',
           credentials: 'include',  // This is crucial for sending cookies
           headers: {
@@ -58,7 +58,7 @@ const Dashboard = () => {
   // Add a function to check session status (for debugging)
   const checkSession = async () => {
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/session-check`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/session-check`, {
         method: 'GET',
         credentials: 'include',
         headers: {

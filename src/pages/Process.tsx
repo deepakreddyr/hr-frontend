@@ -70,7 +70,7 @@ const Process = () => {
     const fetchInitialData = async () => {
       try {
         setIsLoading(true);
-        const res = await fetch(`${process.env.REACT_APP_API_URL}/api/process/${searchId}`, { 
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/process/${searchId}`, { 
           method: 'GET', 
           credentials: 'include' 
         });
@@ -122,7 +122,7 @@ const Process = () => {
 
   const generateSuggestions = async () => {
     try {
-      const res = await fetch('${process.env.REACT_APP_API_URL}/api/get-questions', {
+      const res = await fetch('${import.meta.env.VITE_API_URL}/api/get-questions', {
         method: 'GET',
         credentials: 'include',
       });
@@ -159,7 +159,7 @@ const Process = () => {
       form.append('customQuestion', formData.customQuestion);
       if (uploadedFile) form.append('csvFile', uploadedFile);
 
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/process/${searchId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/process/${searchId}`, {
         method: 'POST',
         credentials: 'include',
         body: form,

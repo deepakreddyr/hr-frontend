@@ -34,7 +34,7 @@ const Sidebar = () => {
   ];
 
   const handleLogout = async () => {
-    const response = await fetch(`${process.env.REACT_APP_API_URL}/logout`, {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/logout`, {
       method: 'GET',
       credentials: 'include',
     });
