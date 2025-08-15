@@ -32,7 +32,7 @@ const Settings = () => {
 
   // Fetch settings on load
   useEffect(() => {
-    axios.get(`${REACT_APP_API_URL}/api/settings`, { withCredentials: true })
+    axios.get(`${process.env.REACT_APP_API_URL}/api/settings`, { withCredentials: true })
       .then(res => {
         const data = res.data;
         setSettings({
@@ -48,7 +48,7 @@ const Settings = () => {
 
   // Save settings
   const handleSave = () => {
-    axios.post(`${REACT_APP_API_URL}/api/settings`, {
+    axios.post(`${process.env.REACT_APP_API_URL}/api/settings`, {
       ...settings,
       darkTheme: isDark
     }, { withCredentials: true })

@@ -23,7 +23,7 @@ const Account = () => {
 
   const fetchUserData = async () => {
     try {
-      const res = await fetch(`${REACT_APP_API_URL}/api/user-profile`, {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/user-profile`, {
         credentials: 'include'
       });
       const data = await res.json();
