@@ -19,4 +19,20 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // Add build configuration
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    // Ensure public files (including _redirects) are copied
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+        },
+      },
+    },
+  },
+  // Ensure public directory files are copied to dist
+  publicDir: 'public',
 }));
