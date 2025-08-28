@@ -36,10 +36,14 @@ const Sidebar = () => {
   const handleLogout = async () => {
     const response = await fetch(`${import.meta.env.VITE_API_URL}/logout`, {
       method: 'GET',
-      credentials: 'include',
+       headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        },
     });
     const data = await response.json();
     if (data.success) {
+      localStorage.clear()
       window.location.href = '/login';
     } else {
       alert('Logout failed: ' + data.message);
