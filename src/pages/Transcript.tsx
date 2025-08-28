@@ -20,7 +20,10 @@ const Transcript = () => {
     const fetchTranscriptData = async () => {
       try {
         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/transcript/${candidateId}`, {
-          credentials: 'include',
+          headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        },
         });
         const data = await res.json();
         setTranscript(data.transcript || []);

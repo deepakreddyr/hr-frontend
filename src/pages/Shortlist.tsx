@@ -50,7 +50,10 @@ const Shortlist = () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/shortlist/${searchId}`, {
         method: 'POST',
-        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
         body: payload,
       });
 

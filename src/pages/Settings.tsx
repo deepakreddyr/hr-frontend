@@ -32,7 +32,11 @@ const Settings = () => {
 
   // Fetch settings on load
   useEffect(() => {
-    axios.get(`${import.meta.env.VITE_API_URL}/api/settings`, { withCredentials: true })
+    axios.get(`${import.meta.env.VITE_API_URL}/api/settings`, { 
+      headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        }, })
       .then(res => {
         const data = res.data;
         setSettings({
@@ -51,7 +55,10 @@ const Settings = () => {
     axios.post(`${import.meta.env.VITE_API_URL}/api/settings`, {
       ...settings,
       darkTheme: isDark
-    }, { withCredentials: true })
+    }, {  headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        },})
       .then(() => console.log("Settings saved"))
       .catch(err => console.error("Failed to save settings:", err));
   };

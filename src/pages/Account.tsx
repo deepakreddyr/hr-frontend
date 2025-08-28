@@ -24,7 +24,10 @@ const Account = () => {
   const fetchUserData = async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/user-profile`, {
-        credentials: 'include'
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        },
       });
       const data = await res.json();
       if (res.ok) {

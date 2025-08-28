@@ -11,7 +11,10 @@ const History = () => {
   const fetchSearches = async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/searches`, {
-        credentials: 'include',
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        },
       });
       const data = await res.json();
       setSearches(data || []);
@@ -38,7 +41,10 @@ const History = () => {
   const handleRowClick = async (searchId: number) => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/search-status/${searchId}`, {
-        credentials: 'include',
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        },
       });
       const data = await res.json();
 
@@ -53,7 +59,7 @@ const History = () => {
         navigate(`/shortlist/${searchId}`);
       } else if (status === "process") {
         navigate(`/process/${searchId}`);
-      } else if (status === "result"){
+      } else if (status === "results"){
         navigate(`/results/${searchId}`);
       }
     } catch (error) {
@@ -66,10 +72,14 @@ const History = () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/create-search`, {
         method: 'POST',
-        credentials: 'include',
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        },
       });
       const data = await res.json();
-      if (res.ok && data.search_id) {
+      if (res.ok && data.search_id && data.history_id) {
+        localStorage.setItem("history_id",data.history_id);
         navigate(`/shortlist/${data.search_id}`);
       } else {
         alert("Failed to create search.");

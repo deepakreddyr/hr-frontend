@@ -25,7 +25,7 @@ const InputField = ({
   type?: string;
 }) => (
   <div>
-    <label className="block text-sm font-medium text-foreground mb-2 flex items-center space-x-1">
+    <label className="block text-sm font-medium text-foreground mb-2  items-center space-x-1">
       {icon && <span>{icon}</span>}
       <span>{label}</span>
     </label>
@@ -72,7 +72,10 @@ const Process = () => {
         setIsLoading(true);
         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/process/${searchId}`, { 
           method: 'GET', 
-          credentials: 'include' 
+          headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        },
         });
         const data = await res.json();
         console.log('Initial data:', data);
@@ -92,7 +95,7 @@ const Process = () => {
           if (data.right_fields && !hasSetInitialData.current) {
             setFormData(prev => ({
               ...prev,
-              ...data.prev_fields
+              ...data.right_fields
             }));
             setFieldsDisabled(data.submitted > 0);
             hasSetInitialData.current = true;
@@ -122,9 +125,12 @@ const Process = () => {
 
   const generateSuggestions = async () => {
     try {
-      const res = await fetch('${import.meta.env.VITE_API_URL}/api/get-questions', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/get-questions?search_id=`+searchId, {
         method: 'GET',
-        credentials: 'include',
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        },
       });
       const data = await res.json();
       if (res.ok && data.questions) {
@@ -161,7 +167,10 @@ const Process = () => {
 
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/process/${searchId}`, {
         method: 'POST',
-        credentials: 'include',
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          // "Content-Type": "application/json",
+        },
         body: form,
       });
 
@@ -170,7 +179,7 @@ const Process = () => {
       
       if (res.ok) {
         if (data.redirect) {
-          navigate('/loading');
+          navigate("/loading?search_id=" + searchId);
         } else if (data.next) {
           setSubmitted(data.submitted);
           setCurrentIndex(data.candidateIndex);
@@ -306,9 +315,6 @@ const Process = () => {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Resume Data for Candidate # {currentIndex || 'N/A'}
-                  </label>
                   <Textarea
                     value={formData.bulkResumeData}
                     onChange={(e) => setFormData(prev => ({ ...prev, bulkResumeData: e.target.value }))}
@@ -366,7 +372,7 @@ const Process = () => {
                     disabled={fieldsDisabled || isLoading}
                   />
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2 flex items-center space-x-1">
+                    <label className="block text-sm font-medium text-foreground mb-2 items-center space-x-1">
                       <Clock className="w-4 h-4" />
                       <span>Notice Period</span>
                     </label>

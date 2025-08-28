@@ -40,7 +40,11 @@ const Billing = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    axios.get(`${import.meta.env.VITE_API_URL}/api/billing-data`, { withCredentials: true })
+    axios.get(`${import.meta.env.VITE_API_URL}/api/billing-data`, { 
+      headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        }, })
       .then((res) => {
         const data = res.data;
         setCurrentCredits(data.current_credits || 0);

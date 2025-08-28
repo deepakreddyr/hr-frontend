@@ -7,39 +7,48 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
 
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/login`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
         },
-        body: new URLSearchParams({
+        body: JSON.stringify({
           email,
           password,
         }),
-        credentials: 'include', // Send session cookie
       });
 
-      if (response.redirected) {
-        // Flask is redirecting to /dashboard
-        window.location.href = response.url;
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Store JWT tokens in localStorage
+        localStorage.setItem('access_token', data.access_token);
+        localStorage.setItem('refresh_token', data.refresh_token);
+        
+        // Store user info for easy access
+        localStorage.setItem('user_email', data.user.email);
+        localStorage.setItem('user_id', data.user.id);
+        
+        console.log('Login successful:', data.message);
+        
+        // Navigate to dashboard
+        navigate('/dashboard');
       } else {
-        const text = await response.text();
-        if (text.includes('Invalid credentials') || text.includes('Login failed')) {
-          alert('Login failed. Please check your credentials.');
-        } else {
-          navigate('/dashboard');
-        }
+        // Handle login failure
+        setError(data.message || 'Login failed. Please check your credentials.');
       }
     } catch (error) {
       console.error('Login error:', error);
-      alert('An error occurred during login.');
+      setError('An error occurred during login. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -64,6 +73,13 @@ const Login = () => {
         <div className="bg-card border border-border rounded-xl p-8 shadow-2xl">
           <h2 className="text-2xl font-bold text-foreground mb-6 text-center">Welcome Back</h2>
           
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <p className="text-red-500 text-sm text-center">{error}</p>
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Field */}
             <div>
@@ -78,6 +94,7 @@ const Login = () => {
                 className="w-full px-4 py-3 bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                 placeholder="Enter your email"
                 required
+                disabled={isLoading}
               />
             </div>
 
@@ -95,11 +112,13 @@ const Login = () => {
                   className="w-full px-4 py-3 bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all pr-12"
                   placeholder="Enter your password"
                   required
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  disabled={isLoading}
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>

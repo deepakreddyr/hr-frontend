@@ -7,7 +7,9 @@ const Loading = () => {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState(false);
   const navigate = useNavigate();
-
+  const searchParams = new URLSearchParams(location.search);
+  const searchId = searchParams.get("search_id");
+  
   useEffect(() => {
     const texts = [
       'Analyzing resumes...',
@@ -34,9 +36,12 @@ const Loading = () => {
     // ✅ First: Trigger backend processing
     const startProcessing = async () => {
       try {
-        await fetch(`${import.meta.env.VITE_API_URL}/api/loading`, {
+        await fetch(`${import.meta.env.VITE_API_URL}/api/loading?search_id=${searchId}`, {
           method: 'GET',
-          credentials: 'include',
+          headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        },
         });
       } catch (err) {
         console.error('Error triggering processing:', err);
@@ -46,9 +51,12 @@ const Loading = () => {
     // ✅ Poll until processing is done
     const checkAndRedirect = async () => {
       try {
-        const res = await fetch('${import.meta.env.VITE_API_URL}/api/check-processing', {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/check-processing?search_id=${searchId}`, {
           method: 'GET',
-          credentials: 'include',
+          headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        },
         });
         const data = await res.json();
 

@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +20,7 @@ import Billing from "./pages/Billing";
 import Settings from "./pages/Settings";
 import Help from "./pages/Help";
 import Loading from "./pages/Loading";
+import PrivateRoute from "./routes/PrivateRoute";
 
 const queryClient = new QueryClient();
 
@@ -32,23 +32,138 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            {/* Public Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/loading" element={<Loading />} />
+
+            {/* Redirect root → dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
-            <Route path="/history" element={<Layout><History /></Layout>} />
-            <Route path="/results/:searchId" element={<Layout><Results /></Layout>} />
-            <Route path="/saved-profiles" element={<Layout><SavedProfiles /></Layout>} />
-            <Route path="/shortlist/:searchId" element={<Layout><Shortlist /></Layout>} />
-            <Route path="/process/:searchId" element={<Layout><Process /></Layout>} />
-            <Route path="/transcript/:candidateId" element={<Layout><Transcript /></Layout>} />
-            <Route path="/final-selects" element={<Layout><FinalSelects /></Layout>} />
-            <Route path="/candidate/:id" element={<Layout><div className="p-8 text-center"><h1 className="text-2xl font-bold text-foreground">Candidate Profile</h1><p className="text-muted-foreground">Coming Soon</p></div></Layout>} />
-            <Route path="/joinees" element={<Layout><div className="p-8 text-center"><h1 className="text-2xl font-bold text-foreground">Joinees</h1><p className="text-muted-foreground">Coming Soon</p></div></Layout>} />
-            <Route path="/account" element={<Layout><Account /></Layout>} />
-            <Route path="/billing" element={<Layout><Billing /></Layout>} />
-            <Route path="/settings" element={<Layout><Settings /></Layout>} />
-            <Route path="/help" element={<Layout><Help /></Layout>} />
+
+            {/* Protected Routes */}
+            <Route
+              path="/dashboard"
+              element={
+                <PrivateRoute>
+                  <Layout><Dashboard /></Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/history"
+              element={
+                <PrivateRoute>
+                  <Layout><History /></Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/results/:searchId"
+              element={
+                <PrivateRoute>
+                  <Layout><Results /></Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/saved-profiles"
+              element={
+                <PrivateRoute>
+                  <Layout><SavedProfiles /></Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/shortlist/:searchId"
+              element={
+                <PrivateRoute>
+                  <Layout><Shortlist /></Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/process/:searchId"
+              element={
+                <PrivateRoute>
+                  <Layout><Process /></Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/transcript/:candidateId"
+              element={
+                <PrivateRoute>
+                  <Layout><Transcript /></Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/final-selects"
+              element={
+                <PrivateRoute>
+                  <Layout><FinalSelects /></Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/candidate/:id"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <div className="p-8 text-center">
+                      <h1 className="text-2xl font-bold text-foreground">Candidate Profile</h1>
+                      <p className="text-muted-foreground">Coming Soon</p>
+                    </div>
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/joinees"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <div className="p-8 text-center">
+                      <h1 className="text-2xl font-bold text-foreground">Joinees</h1>
+                      <p className="text-muted-foreground">Coming Soon</p>
+                    </div>
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/account"
+              element={
+                <PrivateRoute>
+                  <Layout><Account /></Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/billing"
+              element={
+                <PrivateRoute>
+                  <Layout><Billing /></Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <PrivateRoute>
+                  <Layout><Settings /></Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/help"
+              element={
+                <PrivateRoute>
+                  <Layout><Help /></Layout>
+                </PrivateRoute>
+              }
+            />
+
+            {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

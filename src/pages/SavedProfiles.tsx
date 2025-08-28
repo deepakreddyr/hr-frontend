@@ -11,7 +11,10 @@ const SavedProfiles = () => {
     const fetchSavedCandidates = async () => {
       try {
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/get-liked-candiates`, {
-          credentials: 'include',
+          headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        },
         });
         const data = await response.json();
         setSavedCandidates(data || []);
@@ -38,7 +41,8 @@ const SavedProfiles = () => {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/unlike-candidate`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
         },
         credentials: 'include',
         body: JSON.stringify({ candidate_id: candidateId }),

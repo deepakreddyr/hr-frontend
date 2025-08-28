@@ -32,7 +32,10 @@ const Results = () => {
     const fetchCandidates = async () => {
       try {
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/results?searchID=${searchId}`, {
-        withCredentials: true,
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        },
       });
         console.log(res);
         setCandidates(res.data.candidates || []);
@@ -69,7 +72,9 @@ const Results = () => {
   const handleLikeToggle = async (candidateId: number, currentLiked: boolean) => {
     try {
       await axios.post(`${import.meta.env.VITE_API_URL}/like-candidate`, {
-        withCredentials: true,
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+        },
         candidate_id: candidateId,
         liked: !currentLiked
       });
@@ -84,7 +89,9 @@ const Results = () => {
   const handleAddToFinalSelects = async () => {
     try {
       await axios.post(`${import.meta.env.VITE_API_URL}/add-final-select`, {
-        withCredentials: true,
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+        },
         candidate_ids: selectedCandidates
       });
       setShowFinalSuccess(true);
@@ -104,12 +111,15 @@ const Results = () => {
   const handleCallCandidate = async (candidate) => {
   try {
     const res = await axios.post(`${import.meta.env.VITE_API_URL}/call-single`, {
+      headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+        },
       name: candidate.name,
       phone: candidate.phone,
       skills: candidate.skills,
       company: candidate.company || '',
       candidate_id: candidate.id,
-    }, { withCredentials: true });
+    }, );
 
     setCallSuccessName(candidate.name);
     setShowCallSuccess(true);
@@ -136,8 +146,11 @@ const handleCallSelectedCandidates = async () => {
     }));
 
     const res = await axios.post(`${import.meta.env.VITE_API_URL}/call`, {
+      headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+        },
       candidates: payload
-    }, { withCredentials: true });
+    },);
 
     
     setShowCallSuccess(true);
@@ -163,8 +176,11 @@ const handleCallAllCandidates = async () => {
     }));
 
     const res = await axios.post(`${import.meta.env.VITE_API_URL}/call`, {
+      headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+        },
       candidates: payload
-    }, { withCredentials: true });
+    },);
 
     alert("Calls initiated for all candidates");
   } catch (error) {

@@ -12,21 +12,18 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [usageData, setUsageData] = useState([]);
-  console.log(import.meta.env.VITE_API_URL);
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setError(null);
         
-        // FIXED: Properly configured fetch with credentials
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard`, {
-          method: 'GET',
-          credentials: 'include',  // This is crucial for sending cookies
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-        });
+       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+      });
 
         const data = await res.json();
         

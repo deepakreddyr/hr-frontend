@@ -43,7 +43,10 @@ const FinalSelects = () => {
     const fetchFinalCandidates = async () => {
       try {
         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/final-selects`, {
-          credentials: "include",
+          headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        },
         });
         const data = await res.json();
         setCandidates(data.candidates || []);
@@ -91,9 +94,9 @@ const FinalSelects = () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/final-selects`, {
         method: "POST",
-        credentials: "include",
         headers: {
-          "Content-Type": "application/json"
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           joined: [{ candidate_id: candidateId, joined: !currentStatus }]
@@ -121,9 +124,9 @@ const FinalSelects = () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/remove-final-select`, {
         method: "POST",
-        credentials: "include",
         headers: {
-          "Content-Type": "application/json"
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ candidate_id: candidateId })
       });
@@ -147,9 +150,9 @@ const FinalSelects = () => {
 
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/final-selects`, {
         method: "POST",
-        credentials: "include",
         headers: {
-          "Content-Type": "application/json"
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ joined: joinedUpdates })
       });
@@ -180,9 +183,9 @@ const FinalSelects = () => {
 
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/final-selects`, {
         method: "POST",
-        credentials: "include",
         headers: {
-          "Content-Type": "application/json"
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ joined: joinedUpdates })
       });
@@ -216,9 +219,9 @@ const FinalSelects = () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/final-selects`, {
         method: "POST",
-        credentials: "include",
         headers: {
-          "Content-Type": "application/json"
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ 
           remove_from_final: selectedCandidates 
