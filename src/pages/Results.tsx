@@ -71,13 +71,13 @@ const Results = () => {
 
   const handleLikeToggle = async (candidateId: number, currentLiked: boolean) => {
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/like-candidate`, {
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-        },
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/like-candidate`, {
         candidate_id: candidateId,
         liked: !currentLiked
-      });
+      },{headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        }},);
       setCandidates(prev =>
         prev.map(c => (c.id === candidateId ? { ...c, liked: !currentLiked } : c))
       );
@@ -88,12 +88,12 @@ const Results = () => {
 
   const handleAddToFinalSelects = async () => {
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/add-final-select`, {
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-        },
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/add-final-select`, {
         candidate_ids: selectedCandidates
-      });
+      },{headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        }},);
       setShowFinalSuccess(true);
 
     setTimeout(() => {
@@ -110,16 +110,17 @@ const Results = () => {
 
   const handleCallCandidate = async (candidate) => {
   try {
-    const res = await axios.post(`${import.meta.env.VITE_API_URL}/call-single`, {
-      headers: {
-          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-        },
+    const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/call-single`, {
+      search_id: searchId,
       name: candidate.name,
       phone: candidate.phone,
       skills: candidate.skills,
       company: candidate.company || '',
       candidate_id: candidate.id,
-    }, );
+    },{headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        }}, );
 
     setCallSuccessName(candidate.name);
     setShowCallSuccess(true);
@@ -145,12 +146,13 @@ const handleCallSelectedCandidates = async () => {
       candidate_id: c.id
     }));
 
-    const res = await axios.post(`${import.meta.env.VITE_API_URL}/call`, {
-      headers: {
-          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-        },
+    const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/call`, {
+      search_id: searchId,
       candidates: payload
-    },);
+    },{headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        },});
 
     
     setShowCallSuccess(true);
@@ -175,12 +177,13 @@ const handleCallAllCandidates = async () => {
       candidate_id: c.id
     }));
 
-    const res = await axios.post(`${import.meta.env.VITE_API_URL}/call`, {
-      headers: {
-          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-        },
+    const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/call`, {
+      search_id: searchId,   // <-- add this
       candidates: payload
-    },);
+    },{headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        },});
 
     alert("Calls initiated for all candidates");
   } catch (error) {
