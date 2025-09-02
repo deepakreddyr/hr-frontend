@@ -44,7 +44,6 @@ const Sidebar = () => {
     const data = await response.json();
     if (data.success) {
       localStorage.clear()
-      window.location.href = '/login';
     } else {
       alert('Logout failed: ' + data.message);
     }
@@ -95,13 +94,16 @@ const Sidebar = () => {
 
       {/* Footer */}
       <div className="p-4 border-t border-border">
-        <button
-          onClick={handleLogout}
-          className="flex items-center space-x-3 px-4 py-3 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all duration-200 w-full"
+        <Link
+          to="/login"
+          onClick={(e) => {
+            handleLogout();     // clear tokens + call API
+          }}
+          className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-red-100 text-red-600 hover:text-red-800 transition"
         >
           <LogOut className="w-5 h-5" />
           <span className="font-medium">Logout</span>
-        </button>
+        </Link>
       </div>
     </div>
   );
