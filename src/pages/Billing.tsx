@@ -60,7 +60,7 @@ const Billing = () => {
         setPaymentHistory(
           (data.payment_history || []).map((payment: any) => ({
             date: new Date(payment.created_at).toLocaleDateString(),
-            amount: `$${(payment.amount / 100).toFixed(2)}`, // assuming cents
+            amount: `₹${payment.amount}`, // assuming cents
             method: payment.payment_method,
             status: payment.status,
           }))
