@@ -128,6 +128,12 @@ const History = () => {
                 <th className="text-left p-4 text-sm font-medium text-muted-foreground">
                   <div className="flex items-center space-x-2">
                     <User className="w-4 h-4" />
+                    <span>Search name</span>
+                  </div>
+                </th>
+                <th className="text-left p-4 text-sm font-medium text-muted-foreground">
+                  <div className="flex items-center space-x-2">
+                    <User className="w-4 h-4" />
                     <span>Recruiter</span>
                   </div>
                 </th>
@@ -150,6 +156,9 @@ const History = () => {
                   onClick={() => handleRowClick(search.id)}
                   className="border-b border-border hover:bg-secondary/30 cursor-pointer transition-colors group"
                 >
+                  <td className="p-4">
+                    <div className="font-medium text-foreground">{search.search_name || '-'}</div>
+                  </td>
                   <td className="p-4">
                     <div className="font-medium text-foreground">{search.rc_name || '-'}</div>
                   </td>

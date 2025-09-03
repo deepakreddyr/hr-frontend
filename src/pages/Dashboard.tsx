@@ -1,10 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Users, Search as SearchIcon, UserCheck, Phone, CreditCard, TrendingUp,
+  Users,
+  Search as SearchIcon,
+  UserCheck,
+  Phone,
+  CreditCard,
+  TrendingUp,
 } from 'lucide-react';
 import MetricCard from '../components/MetricCard';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
 } from 'recharts';
 
 const Dashboard = () => {
@@ -12,38 +25,43 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [usageData, setUsageData] = useState([]);
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setError(null);
-        
-       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        },
-      });
+
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard`, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
 
         const data = await res.json();
-        
+
         if (res.ok) {
           setDashboardData(data);
-          setUsageData(data.weekly_activity || []);
+          setUsageData(
+            (data.weekly_activity || []).map((d) => ({
+              day: d.day,
+              calls: d.calls ?? 0,
+              searches: d.searches ?? 0,
+              joinees: d.joinees ?? 0,
+            }))
+          );
         } else {
-          // Handle different types of errors
           if (res.status === 401) {
-            setError("Session expired. Please login again.");
-            // Optionally redirect to login page
-            // window.location.href = '/login';
+            setError('Session expired. Please login again.');
           } else {
-            setError(data.error || "Failed to fetch dashboard data");
+            setError(data.error || 'Failed to fetch dashboard data');
           }
-          console.error("Error fetching dashboard data:", data.error);
+          console.error('Error fetching dashboard data:', data.error);
         }
       } catch (error) {
-        setError("Network error. Please check your connection.");
-        console.error("Failed to load dashboard data:", error);
+        setError('Network error. Please check your connection.');
+        console.error('Failed to load dashboard data:', error);
       } finally {
         setLoading(false);
       }
@@ -52,7 +70,6 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
-  // Add a function to check session status (for debugging)
   const checkSession = async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/session-check`, {
@@ -63,9 +80,9 @@ const Dashboard = () => {
         },
       });
       const data = await res.json();
-      console.log("Session status:", data);
+      console.log('Session status:', data);
     } catch (error) {
-      console.error("Session check failed:", error);
+      console.error('Session check failed:', error);
     }
   };
 
@@ -82,15 +99,14 @@ const Dashboard = () => {
     return (
       <div className="text-center py-10">
         <div className="text-red-500 mb-4">{error}</div>
-        <button 
-          onClick={() => window.location.reload()} 
+        <button
+          onClick={() => window.location.reload()}
           className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90"
         >
           Retry
         </button>
-        {/* Debug button - remove in production */}
-        <button 
-          onClick={checkSession} 
+        <button
+          onClick={checkSession}
           className="ml-2 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
         >
           Check Session (Debug)
@@ -113,11 +129,15 @@ const Dashboard = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back, {dashboardData.user_name}!</p>
+          <p className="text-muted-foreground">
+            Welcome back, {dashboardData.user_name || 'User'}!
+          </p>
         </div>
         <div className="text-right">
           <p className="text-sm text-muted-foreground">Credits Used</p>
-          <p className="text-2xl font-bold text-primary">{dashboardData.creds_used}</p>
+          <p className="text-2xl font-bold text-primary">
+            {dashboardData.creds_used || 0}
+          </p>
         </div>
       </div>
 
@@ -146,7 +166,7 @@ const Dashboard = () => {
         />
         <MetricCard
           title="Calls Made"
-          value={dashboardData.people_called ?? "--"}
+          value={dashboardData.people_called ?? '--'}
           icon={Phone}
           trend="+25%"
           color="warning"
@@ -199,7 +219,9 @@ const Dashboard = () => {
 
         {/* Bar Chart - Joinees per day */}
         <div className="bg-card border border-border rounded-lg p-6">
-          <h3 className="text-xl font-semibold text-foreground mb-4">Daily Activity (Joinees)</h3>
+          <h3 className="text-xl font-semibold text-foreground mb-4">
+            Daily Activity (Joinees)
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={usageData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -225,8 +247,12 @@ const Dashboard = () => {
           <div className="w-16 h-16 bg-gradient-to-r from-primary to-accent rounded-full mx-auto mb-4 flex items-center justify-center animate-pulse-glow">
             <SearchIcon className="w-8 h-8 text-white" />
           </div>
-          <h4 className="text-lg font-medium text-foreground mb-2">Chat with RecruiterAI</h4>
-          <p className="text-muted-foreground mb-4">Get instant help with your recruitment tasks</p>
+          <h4 className="text-lg font-medium text-foreground mb-2">
+            Chat with RecruiterAI
+          </h4>
+          <p className="text-muted-foreground mb-4">
+            Get instant help with your recruitment tasks
+          </p>
           <button className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg transition-colors">
             Start Conversation
           </button>
