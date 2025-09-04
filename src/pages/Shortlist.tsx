@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Upload, FileText, X, Sparkles, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const Shortlist = () => {
   const { searchId } = useParams();
-  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     searchName: '',
@@ -20,6 +19,7 @@ const Shortlist = () => {
   });
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -37,6 +37,8 @@ const Shortlist = () => {
     if (!searchId) return;
 
     setLoading(true);
+    setErrorMessage(null); // reset old errors
+
     const payload = new FormData();
     payload.append('searchName', formData.searchName);
     payload.append('skills', formData.requiredSkills);
@@ -59,14 +61,13 @@ const Shortlist = () => {
 
       const data = await res.json();
       if (data.success) {
-          window.location.href = `/process/${searchId}`; // ✅ full URL redirect
-        } else {
-          alert("Shortlisting failed or no redirect URL.");
-          console.warn(data);
-        }
+        window.location.href = `/process/${searchId}`;
+      } else {
+        setErrorMessage(data.message || "No candidates matched the required skills.");
+      }
     } catch (err) {
       console.error('Shortlist submit failed:', err);
-      alert('Something went wrong. Please try again.');
+      setErrorMessage("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -82,6 +83,7 @@ const Shortlist = () => {
       candidateData: ''
     });
     setUploadedFile(null);
+    setErrorMessage(null);
   };
 
   return (
@@ -116,6 +118,7 @@ const Shortlist = () => {
                   required
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Job Role *</label>
                 <Input
@@ -135,6 +138,11 @@ const Shortlist = () => {
                   required
                   minLength={1}
                 />
+                {errorMessage && (
+                  <div className="mt-2 p-3 rounded-lg bg-red-50 border border-red-300 text-red-700 text-sm">
+                    {errorMessage}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -183,6 +191,7 @@ const Shortlist = () => {
           </CardContent>
         </Card>
 
+        {/* JD Upload Card */}
         <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
