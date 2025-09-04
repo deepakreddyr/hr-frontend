@@ -1,14 +1,193 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Upload, Sparkles, MapPin, Building, Clock, Wifi, FileText, User, CheckCircle, Circle
+  Upload, Sparkles, MapPin, Building, Clock, Wifi, FileText, User, CheckCircle, Circle, Bot, BarChart3, Users, Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useNavigate , useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
-// Move InputField component outside of the main component
+// Processing Loader Component
+const ProcessingLoader = ({ searchId }: { searchId: string }) => {
+  const [loadingText, setLoadingText] = useState('Analyzing resumes...');
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState(false);
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    const texts = [
+      'Analyzing resumes...',
+      'Matching skills and experience...',
+      'Calculating compatibility scores...',
+      'Preparing candidate profiles...',
+      'Almost ready...'
+    ];
+
+    let currentIndex = 0;
+
+    const textInterval = setInterval(() => {
+      currentIndex = (currentIndex + 1) % texts.length;
+      setLoadingText(texts[currentIndex]);
+    }, 2000);
+
+    const progressInterval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 100) return 100;
+        return prev + Math.random() * 15;
+      });
+    }, 300);
+
+    // Start processing in background
+    const startProcessing = async () => {
+      try {
+        await fetch(`${import.meta.env.VITE_API_URL}/api/process-candidates/${searchId}`, {
+          method: 'POST',
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (err) {
+        console.error('Error starting processing:', err);
+      }
+    };
+
+    // Poll until processing is done
+    const checkAndRedirect = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/check-processing/${searchId}`, {
+          method: 'GET',
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+            "Content-Type": "application/json",
+          },
+        });
+        const data = await res.json();
+
+        if (res.ok && data.processed) {
+          clearInterval(textInterval);
+          clearInterval(progressInterval);
+          clearInterval(pollInterval);
+          clearTimeout(errorTimeout);
+
+          if (data.status === 'results') {
+            navigate(`/results/${searchId}`);
+          } else if (data.status === 'error') {
+            setError(true);
+            setLoadingText('Processing failed. Please try again.');
+          }
+        }
+      } catch (err) {
+        console.error('Polling error:', err);
+      }
+    };
+
+    // Start everything
+    startProcessing();
+    const pollInterval = setInterval(checkAndRedirect, 2000);
+
+    const errorTimeout = setTimeout(() => {
+      setLoadingText('Processing is taking longer than expected. Please wait...');
+      setError(true);
+      clearInterval(textInterval);
+      clearInterval(progressInterval);
+      clearInterval(pollInterval);
+    }, 30000);
+
+    return () => {
+      clearInterval(textInterval);
+      clearInterval(progressInterval);
+      clearInterval(pollInterval);
+      clearTimeout(errorTimeout);
+    };
+  }, [navigate, searchId]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-background via-background to-primary/5">
+      <div className="text-center space-y-8 max-w-md mx-auto">
+        {/* Loading Animation */}
+        <div className="relative">
+          <div className="w-24 h-24 mx-auto mb-6 relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary/60 rounded-full animate-pulse"></div>
+            <div className="relative w-full h-full bg-card/90 backdrop-blur-sm rounded-full flex items-center justify-center border border-primary/20">
+              <Sparkles className="w-12 h-12 text-primary animate-bounce" />
+            </div>
+          </div>
+          <div className="absolute -top-4 -left-8 animate-bounce" style={{ animationDelay: '0.5s', animationDuration: '2s' }}>
+            <BarChart3 className="w-6 h-6 text-primary/60" />
+          </div>
+          <div className="absolute -top-2 -right-6 animate-bounce" style={{ animationDelay: '1s', animationDuration: '2s' }}>
+            <Users className="w-5 h-5 text-primary/60" />
+          </div>
+          <div className="absolute -bottom-2 -left-6 animate-bounce" style={{ animationDelay: '1.5s', animationDuration: '2s' }}>
+            <Zap className="w-4 h-4 text-primary/60" />
+          </div>
+        </div>
+
+        {/* Main Heading */}
+        <div className="space-y-4">
+          <h1 className="text-3xl font-bold text-foreground">
+            Processing Your Candidates
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            Please wait while we analyze all resumes and match them with your job requirements.
+          </p>
+        </div>
+
+        {/* Loading Text */}
+        <div className="h-8 flex items-center justify-center">
+          <p className="text-primary font-medium text-lg">
+            {loadingText}
+          </p>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="space-y-3">
+          <div className="w-full bg-secondary/50 rounded-full h-2 overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all duration-300 ease-out"
+              style={{ width: `${Math.min(progress, 100)}%` }}
+            ></div>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {Math.round(Math.min(progress, 100))}% complete
+          </p>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="space-y-2">
+            <p className="text-red-500 text-sm">
+              {loadingText}
+            </p>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate('/dashboard')}
+              className="text-xs"
+            >
+              Return to Dashboard
+            </Button>
+          </div>
+        )}
+
+        {/* Pulsing Dots */}
+        <div className="flex justify-center space-x-2">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="w-2 h-2 bg-primary rounded-full animate-pulse"
+              style={{ animationDelay: `${i * 0.2}s` }}
+            ></div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Input Field Component
 const InputField = ({
   label,
   icon,
@@ -25,7 +204,7 @@ const InputField = ({
   type?: string;
 }) => (
   <div>
-    <label className="block text-sm font-medium text-foreground mb-2  items-center space-x-1">
+    <label className="block text-sm font-medium text-foreground mb-2 flex items-center space-x-1">
       {icon && <span>{icon}</span>}
       <span>{label}</span>
     </label>
@@ -39,6 +218,7 @@ const InputField = ({
   </div>
 );
 
+// Main Process Component
 const Process = () => {
   const hasSetInitialData = useRef(false);
   const [formData, setFormData] = useState({
@@ -62,35 +242,35 @@ const Process = () => {
   const [questionGenerated, setQuestionGenerated] = useState(false);
   const [fieldsDisabled, setFieldsDisabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const navigate = useNavigate();
   const { searchId } = useParams();
-  
+
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
         setIsLoading(true);
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/process/${searchId}`, { 
-          method: 'GET', 
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/process/${searchId}`, {
+          method: 'GET',
           headers: {
-          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-          "Content-Type": "application/json",
-        },
+            "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+            "Content-Type": "application/json",
+          },
         });
         const data = await res.json();
         console.log('Initial data:', data);
-        
+
         if (data.success) {
           setSubmitted(data.submitted || 0);
           setTarget(data.target || 0);
-          setCurrentIndex(data.currentIndex ?? null);
+          setCurrentIndex(data.candidateIndex ?? null);
           setIsLast(data.isLast || false);
           const parsedIndices = Array.isArray(data.shortlisted_indices)
             ? data.shortlisted_indices
             : JSON.parse(data.shortlisted_indices || '[]');
-
+          
           setShortlistedIndices(parsedIndices);
-
 
           if (data.right_fields && !hasSetInitialData.current) {
             setFormData(prev => ({
@@ -110,7 +290,7 @@ const Process = () => {
         setIsLoading(false);
       }
     };
-    
+
     if (searchId) {
       fetchInitialData();
     }
@@ -125,7 +305,7 @@ const Process = () => {
 
   const generateSuggestions = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/get-questions?search_id=`+searchId, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/get-questions?search_id=${searchId}`, {
         method: 'GET',
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
@@ -169,23 +349,22 @@ const Process = () => {
         method: 'POST',
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-          // "Content-Type": "application/json",
         },
         body: form,
       });
 
       const data = await res.json();
       console.log('Submit response:', data);
-      
+
       if (res.ok) {
-        if (data.redirect) {
-          navigate("/loading?search_id=" + searchId);
+        if (data.processing) {
+          // Final submission - show processing loader
+          setIsProcessing(true);
         } else if (data.next) {
           setSubmitted(data.submitted);
           setCurrentIndex(data.candidateIndex);
           setIsLast(data.isLast);
-          
-          
+
           // Disable fields after first submission
           if (data.right_fields) {
             setFormData(prev => ({
@@ -231,6 +410,11 @@ const Process = () => {
     setQuestionGenerated(false);
   };
 
+  // Show processing loader when processing
+  if (isProcessing && searchId) {
+    return <ProcessingLoader searchId={searchId} />;
+  }
+
   if (isLoading && submitted === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -247,7 +431,7 @@ const Process = () => {
       <div>
         <h1 className="text-3xl font-bold text-foreground">Process Job Requirements</h1>
         <p className="text-muted-foreground">Define search criteria and upload candidate data</p>
-        
+
         {/* Progress Indicator */}
         {target > 0 && (
           <div className="mt-4 space-y-2">
@@ -260,12 +444,12 @@ const Process = () => {
               </p>
             </div>
             <div className="w-full bg-secondary/20 rounded-full h-2">
-              <div 
+              <div
                 className="bg-primary h-2 rounded-full transition-all duration-300"
                 style={{ width: `${(submitted / target) * 100}%` }}
               ></div>
             </div>
-            
+
             {/* Candidate List */}
             <div className="flex flex-wrap gap-2 mt-3">
               {shortlistedIndices.map((candidateIdx, index) => (
@@ -290,7 +474,7 @@ const Process = () => {
             </div>
           </div>
         )}
-        
+
         {currentIndex !== null && (
           <p className="text-sm text-accent mt-2">
             Uploading resume for candidate #{currentIndex}
@@ -300,7 +484,7 @@ const Process = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <Card className="bg-card/50 backdrop-blur-sm border-primary/20 glow-primary">
+          <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Sparkles className="w-5 h-5 text-primary" />
@@ -372,7 +556,7 @@ const Process = () => {
                     disabled={fieldsDisabled || isLoading}
                   />
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2 items-center space-x-1">
+                    <label className="block text-sm font-medium text-foreground mb-2 flex items-center space-x-1">
                       <Clock className="w-4 h-4" />
                       <span>Notice Period</span>
                     </label>
@@ -454,8 +638,8 @@ const Process = () => {
                 )}
 
                 <div className="flex space-x-3">
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="flex-1 bg-primary hover:bg-primary/90"
                     disabled={isLoading}
                   >
@@ -468,9 +652,9 @@ const Process = () => {
                       `Submit Resume ${submitted + 1}/${target}`
                     )}
                   </Button>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     onClick={handleClear}
                     disabled={isLoading}
                   >
@@ -495,7 +679,7 @@ const Process = () => {
                 <div className="text-center py-8">
                   <Sparkles className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
                   <p className="text-muted-foreground text-sm">
-                    {isLast 
+                    {isLast
                       ? 'Click "Generate Suggestions" to see AI-powered question recommendations'
                       : 'Custom questions are available on the final candidate'
                     }
