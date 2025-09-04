@@ -59,7 +59,7 @@ const Shortlist = () => {
 
       const data = await res.json();
       if (data.success) {
-          window.location.href = `http://localhost:8080/process/${searchId}`; // ✅ full URL redirect
+          window.location.href = `/process/${searchId}`; // ✅ full URL redirect
         } else {
           alert("Shortlisting failed or no redirect URL.");
           console.warn(data);
