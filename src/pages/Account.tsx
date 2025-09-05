@@ -4,20 +4,30 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { User, Shield, CreditCard, LogOut } from 'lucide-react';
+import { User, Shield, CreditCard, LogOut, UserPlus } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast'; // ✅ Import toast
 
 const Account = () => {
+  const { toast } = useToast(); // ✅ Initialize toast
+
   const [passwordForm, setPasswordForm] = useState({
     oldPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
 
+  const [addUserForm, setAddUserForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: ''
+  });
+
   const [userData, setUserData] = useState({
     name: '',
     email: '',
     organization: '',
-    role: 'User',
+    role: '',
     credits: 0
   });
 
@@ -35,7 +45,7 @@ const Account = () => {
           name: data.name,
           email: data.email,
           organization: data.organization,
-          role: 'User',
+          role: data.role,
           credits: data.creds
         });
       } else {
@@ -52,8 +62,56 @@ const Account = () => {
 
   const handlePasswordChange = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Password change requested');
+    console.log('Password change requested', passwordForm);
   };
+
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/add-user`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(addUserForm),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        toast({
+          title: "✅ Success",
+          description: data.message || "User added successfully!",
+          variant: "default",
+        });
+
+        // Reset form
+        setAddUserForm({
+          name: '',
+          email: '',
+          password: '',
+          role: ''
+        });
+      } else {
+        toast({
+          title: "❌ Failed",
+          description: data.message || "Could not add user",
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      console.error("Error adding user:", err);
+      toast({
+        title: "❌ Error",
+        description: "Something went wrong while adding user.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const isAdmin = userData.role === 'admin' || userData.role === 'master';
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -100,53 +158,69 @@ const Account = () => {
           </CardContent>
         </Card>
 
-        {/* Change Password */}
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 animate-slide-up" style={{ animationDelay: '0.1s' }}>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Shield className="w-5 h-5" />
-              <span>Change Password</span>
-            </CardTitle>
-            <CardDescription>Update your password to keep your account secure</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handlePasswordChange} className="space-y-4">
-              <div>
-                <Label htmlFor="oldPassword">Current Password</Label>
-                <Input
-                  id="oldPassword"
-                  type="password"
-                  value={passwordForm.oldPassword}
-                  onChange={(e) => setPasswordForm(prev => ({ ...prev, oldPassword: e.target.value }))}
-                  className="bg-background/50 border-border/50 focus:ring-primary focus:border-primary transition-all duration-200"
-                />
-              </div>
-              <div>
-                <Label htmlFor="newPassword">New Password</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  value={passwordForm.newPassword}
-                  onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
-                  className="bg-background/50 border-border/50 focus:ring-primary focus:border-primary transition-all duration-200"
-                />
-              </div>
-              <div>
-                <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={passwordForm.confirmPassword}
-                  onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                  className="bg-background/50 border-border/50 focus:ring-primary focus:border-primary transition-all duration-200"
-                />
-              </div>
-              <Button type="submit" className="w-full hover-glow">
-                Update Password
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        {/* Add User Form (Admin only) */}
+        {isAdmin &&
+          <Card className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <UserPlus className="w-5 h-5" />
+                <span>Add New User</span>
+              </CardTitle>
+              <CardDescription>Create a new user for your organization</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleAddUser} className="space-y-4">
+                <div>
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    value={addUserForm.name}
+                    onChange={(e) => setAddUserForm(prev => ({ ...prev, name: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={addUserForm.email}
+                    onChange={(e) => setAddUserForm(prev => ({ ...prev, email: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={addUserForm.password}
+                    onChange={(e) => setAddUserForm(prev => ({ ...prev, password: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="role">Role</Label>
+                  <select
+                    id="role"
+                    value={addUserForm.role}
+                    onChange={(e) => setAddUserForm((prev) => ({ ...prev, role: e.target.value }))}
+                    className="w-full rounded-md border border-border/50 bg-background/50 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200"
+                    required
+                  >
+                    <option value="">Select role</option>
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <Button type="submit" className="w-full hover-glow">
+                  Add User
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        }
 
         {/* Security Settings */}
         <Card className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 lg:col-span-2 animate-slide-up" style={{ animationDelay: '0.2s' }}>
