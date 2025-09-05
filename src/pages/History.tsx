@@ -67,29 +67,6 @@ const History = () => {
     }
   };
 
-
-  const handleCreateNewSearch = async () => {
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/create-search`, {
-        method: 'POST',
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-          "Content-Type": "application/json",
-        },
-      });
-      const data = await res.json();
-      if (res.ok && data.search_id && data.history_id) {
-        localStorage.setItem("history_id",data.history_id);
-        navigate(`/shortlist/${data.search_id}`);
-      } else {
-        alert("Failed to create search.");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("An error occurred while creating a new search.");
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -98,13 +75,6 @@ const History = () => {
           <h1 className="text-3xl font-bold text-foreground">Search History</h1>
           <p className="text-muted-foreground">Track all your recruitment searches and results</p>
         </div>
-        <button
-          onClick={handleCreateNewSearch}
-          className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors glow-primary"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Create New Search</span>
-        </button>
       </div>
 
       {/* Search Bar */}

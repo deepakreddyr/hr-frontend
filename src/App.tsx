@@ -81,6 +81,14 @@ const App = () => (
               }
             />
             <Route
+              path="/shortlist"
+              element={
+                <PrivateRoute>
+                  <Layout><Shortlist /></Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
               path="/process/:searchId"
               element={
                 <PrivateRoute>

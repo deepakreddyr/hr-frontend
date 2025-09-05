@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Upload, FileText, X, Sparkles, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const Shortlist = () => {
-  const { searchId } = useParams();
+  const { searchId } = useParams<{ searchId?: string }>();
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     searchName: '',
@@ -34,7 +35,6 @@ const Shortlist = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchId) return;
 
     setLoading(true);
     setErrorMessage(null); // reset old errors
@@ -50,7 +50,12 @@ const Shortlist = () => {
     }
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/shortlist/${searchId}`, {
+      // ✅ handle both routes
+      const url = searchId
+        ? `${import.meta.env.VITE_API_URL}/api/shortlist/${searchId}`
+        : `${import.meta.env.VITE_API_URL}/api/shortlist`;
+
+      const res = await fetch(url, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -61,7 +66,9 @@ const Shortlist = () => {
 
       const data = await res.json();
       if (data.success) {
-        window.location.href = `/process/${searchId}`;
+        // if backend returns new searchId when creating
+        const finalSearchId = searchId || data.search_id;
+        navigate(`/process/${finalSearchId}`);
       } else {
         setErrorMessage(data.message || "No candidates matched the required skills.");
       }
@@ -90,13 +97,19 @@ const Shortlist = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Create Shortlist</h1>
-          <p className="text-muted-foreground">Define criteria and upload job description</p>
+          <h1 className="text-3xl font-bold text-foreground">
+            {searchId ? 'Update Shortlist' : 'Create Shortlist'}
+          </h1>
+          <p className="text-muted-foreground">
+            Define criteria and upload job description
+          </p>
         </div>
-        <div className="flex items-center space-x-2">
-          <Filter className="w-5 h-5 text-primary" />
-          <span className="text-sm text-muted-foreground">Search ID: {searchId}</span>
-        </div>
+        {searchId && (
+          <div className="flex items-center space-x-2">
+            <Filter className="w-5 h-5 text-primary" />
+            <span className="text-sm text-muted-foreground">Search ID: {searchId}</span>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -109,8 +122,11 @@ const Shortlist = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* inputs same as before */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Search Name *</label>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Search Name *
+                </label>
                 <Input
                   value={formData.searchName}
                   onChange={(e) => setFormData({ ...formData, searchName: e.target.value })}
@@ -120,7 +136,9 @@ const Shortlist = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Job Role *</label>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Job Role *
+                </label>
                 <Input
                   value={formData.jobRole}
                   onChange={(e) => setFormData({ ...formData, jobRole: e.target.value })}
@@ -130,7 +148,9 @@ const Shortlist = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Required Skills *</label>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Required Skills *
+                </label>
                 <Textarea
                   value={formData.requiredSkills}
                   onChange={(e) => setFormData({ ...formData, requiredSkills: e.target.value })}
@@ -146,7 +166,9 @@ const Shortlist = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Candidate List *</label>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Candidate List *
+                </label>
                 <Textarea
                   value={formData.candidateData}
                   onChange={(e) => setFormData({ ...formData, candidateData: e.target.value })}
@@ -165,7 +187,10 @@ const Shortlist = () => {
                   max="50"
                   value={formData.numberOfCandidates}
                   onChange={(e) =>
-                    setFormData({ ...formData, numberOfCandidates: parseInt(e.target.value) })
+                    setFormData({
+                      ...formData,
+                      numberOfCandidates: parseInt(e.target.value),
+                    })
                   }
                 />
               </div>
@@ -176,7 +201,7 @@ const Shortlist = () => {
                   disabled={loading}
                   className="flex-1 bg-primary hover:bg-primary/90 glow-primary transition-all duration-300"
                 >
-                  {loading ? 'Shortlisting...' : 'Create Shortlist'}
+                  {loading ? 'Shortlisting...' : searchId ? 'Update Shortlist' : 'Create Shortlist'}
                 </Button>
                 <Button
                   type="button"
@@ -191,7 +216,7 @@ const Shortlist = () => {
           </CardContent>
         </Card>
 
-        {/* JD Upload Card */}
+        {/* JD Upload Card (same as before) */}
         <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">

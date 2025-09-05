@@ -6,29 +6,27 @@ import {
   Search,
   Heart,
   User,
-  CheckSquare,
-  UserCheck,
   Settings,
   CreditCard,
   HelpCircle,
   LogOut,
-  FileText,
   Star
 } from 'lucide-react';
 
-
 const Sidebar = () => {
   const location = useLocation();
+  const role = localStorage.getItem("role"); // 👈 read role from localStorage
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    // { icon: FileText, label: 'Process Job', path: '/process' },
     { icon: History, label: 'History', path: '/history' },
     { icon: Heart, label: 'Saved Profiles', path: '/saved-profiles' },
     { icon: Star, label: 'Final Selects', path: '/final-selects' },
-    // { icon: UserCheck, label: 'Joinees', path: '/joinees' },
     { icon: User, label: 'Account', path: '/account' },
-    { icon: CreditCard, label: 'Billing', path: '/billing' },
+    // Billing is shown only if role is admin or master
+    ...(role === "admin" || role === "master"
+      ? [{ icon: CreditCard, label: 'Billing', path: '/billing' }]
+      : []),
     { icon: Settings, label: 'Settings', path: '/settings' },
     { icon: HelpCircle, label: 'Help', path: '/help' },
   ];
@@ -36,18 +34,17 @@ const Sidebar = () => {
   const handleLogout = async () => {
     const response = await fetch(`${import.meta.env.VITE_API_URL}/logout`, {
       method: 'GET',
-       headers: {
-          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-          "Content-Type": "application/json",
-        },
+      headers: {
+        "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+        "Content-Type": "application/json",
+      },
     });
     const data = await response.json();
     if (data.success) {
-      localStorage.clear()
+      localStorage.clear();
     } else {
       alert('Logout failed: ' + data.message);
     }
-
   };
 
   return (
@@ -96,9 +93,7 @@ const Sidebar = () => {
       <div className="p-4 border-t border-border">
         <Link
           to="/login"
-          onClick={(e) => {
-            handleLogout();     // clear tokens + call API
-          }}
+          onClick={() => handleLogout()}
           className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-red-100 text-red-600 hover:text-red-800 transition"
         >
           <LogOut className="w-5 h-5" />

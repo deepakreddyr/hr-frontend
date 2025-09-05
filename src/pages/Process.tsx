@@ -204,7 +204,7 @@ const InputField = ({
   type?: string;
 }) => (
   <div>
-    <label className="block text-sm font-medium text-foreground mb-2 flex items-center space-x-1">
+    <label className="block text-sm font-medium text-foreground mb-2 items-center space-x-1">
       {icon && <span>{icon}</span>}
       <span>{label}</span>
     </label>
@@ -237,7 +237,7 @@ const Process = () => {
   const [isLast, setIsLast] = useState(false);
   const [submitted, setSubmitted] = useState(0);
   const [target, setTarget] = useState(0);
-  const [currentIndex, setCurrentIndex] = useState<number | null>(null);
+  const [currentCandidate, setCurrentCandidate] = useState<{ index: number; name: string; email: string } | null>(null);
   const [shortlistedIndices, setShortlistedIndices] = useState<number[]>([]);
   const [questionGenerated, setQuestionGenerated] = useState(false);
   const [fieldsDisabled, setFieldsDisabled] = useState(false);
@@ -264,8 +264,10 @@ const Process = () => {
         if (data.success) {
           setSubmitted(data.submitted || 0);
           setTarget(data.target || 0);
-          setCurrentIndex(data.candidateIndex ?? null);
+          setCurrentCandidate(data.candidate || null); // ✅ full object
           setIsLast(data.isLast || false);
+          setShortlistedIndices(data.shortlisted || []);
+
           const parsedIndices = Array.isArray(data.shortlisted_indices)
             ? data.shortlisted_indices
             : JSON.parse(data.shortlisted_indices || '[]');
@@ -362,7 +364,7 @@ const Process = () => {
           setIsProcessing(true);
         } else if (data.next) {
           setSubmitted(data.submitted);
-          setCurrentIndex(data.candidateIndex);
+          setCurrentCandidate(data.candidate || null);
           setIsLast(data.isLast);
 
           // Disable fields after first submission
@@ -475,9 +477,9 @@ const Process = () => {
           </div>
         )}
 
-        {currentIndex !== null && (
+        {currentCandidate &&(
           <p className="text-sm text-accent mt-2">
-            Uploading resume for candidate #{currentIndex}
+            Uploading resume for candidate {currentCandidate.name}
           </p>
         )}
       </div>
@@ -489,9 +491,9 @@ const Process = () => {
               <CardTitle className="flex items-center space-x-2">
                 <Sparkles className="w-5 h-5 text-primary" />
                 <span>Job Requirements</span>
-                {currentIndex && (
+                {currentCandidate && (
                   <span className="text-sm font-normal text-muted-foreground">
-                    - Candidate #{currentIndex}
+                    - Candidate #{currentCandidate.index}
                   </span>
                 )}
               </CardTitle>
@@ -556,7 +558,7 @@ const Process = () => {
                     disabled={fieldsDisabled || isLoading}
                   />
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2 flex items-center space-x-1">
+                    <label className="block text-sm font-medium text-foreground mb-2 items-center space-x-1">
                       <Clock className="w-4 h-4" />
                       <span>Notice Period</span>
                     </label>

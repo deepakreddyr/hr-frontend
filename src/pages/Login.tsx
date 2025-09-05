@@ -37,7 +37,7 @@ const Login = () => {
         // Store user info for easy access
         localStorage.setItem('user_email', data.user.email);
         localStorage.setItem('user_id', data.user.id);
-        
+        localStorage.setItem('role',data.user.role);
         console.log('Login successful:', data.message);
         
         // Navigate to dashboard
