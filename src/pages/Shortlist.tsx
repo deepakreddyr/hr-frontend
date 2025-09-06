@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Upload, FileText, X, Sparkles, Filter } from 'lucide-react';
+import { Upload, FileText, X, Sparkles, Filter, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const Shortlist = () => {
   const { searchId } = useParams<{ searchId?: string }>();
@@ -22,6 +23,57 @@ const Shortlist = () => {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // NEW: source selector
+  const [sourceType, setSourceType] = useState<'blank' | 'search' | 'task'>('blank');
+  const [sourceOptions, setSourceOptions] = useState<any[]>([]);
+  const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
+
+  // fetch available sources
+  useEffect(() => {
+    if (sourceType === 'search') {
+      fetch(`${import.meta.env.VITE_API_URL}/api/my-searches`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+      })
+        .then(res => res.json())
+        .then(data => setSourceOptions(data || []));
+    } else if (sourceType === 'task') {
+      fetch(`${import.meta.env.VITE_API_URL}/api/my-tasks`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+      })
+        .then(res => res.json())
+        .then(data => setSourceOptions(data || []));
+    } else {
+      setSourceOptions([]);
+    }
+  }, [sourceType]);
+
+  // prefill when selected
+  useEffect(() => {
+    if (!selectedSourceId) return;
+
+    const url =
+      sourceType === 'search'
+        ? `${import.meta.env.VITE_API_URL}/api/shortlist/${selectedSourceId}`
+        : `${import.meta.env.VITE_API_URL}/api/tasks/${selectedSourceId}`;
+
+    fetch(url, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data) {
+          setFormData({
+            searchName: data.searchName || data.title || '',
+            requiredSkills: data.requiredSkills || data.skills?.join(', ') || '',
+            numberOfCandidates: data.numCandidates || 5,
+            jobRole: data.jobRole || data.position || '',
+            customQuestion: data.customQuestion || '',
+            candidateData: data.candidateData || '',
+          });
+        }
+      });
+  }, [selectedSourceId, sourceType]);
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type === 'application/pdf') {
@@ -35,9 +87,8 @@ const Shortlist = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setLoading(true);
-    setErrorMessage(null); // reset old errors
+    setErrorMessage(null);
 
     const payload = new FormData();
     payload.append('searchName', formData.searchName);
@@ -50,7 +101,6 @@ const Shortlist = () => {
     }
 
     try {
-      // ✅ handle both routes
       const url = searchId
         ? `${import.meta.env.VITE_API_URL}/api/shortlist/${searchId}`
         : `${import.meta.env.VITE_API_URL}/api/shortlist`;
@@ -58,23 +108,22 @@ const Shortlist = () => {
       const res = await fetch(url, {
         method: 'POST',
         headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          Accept: 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
         },
         body: payload,
       });
 
       const data = await res.json();
       if (data.success) {
-        // if backend returns new searchId when creating
         const finalSearchId = searchId || data.search_id;
         navigate(`/process/${finalSearchId}`);
       } else {
-        setErrorMessage(data.message || "No candidates matched the required skills.");
+        setErrorMessage(data.message || 'No candidates matched the required skills.');
       }
     } catch (err) {
       console.error('Shortlist submit failed:', err);
-      setErrorMessage("Something went wrong. Please try again.");
+      setErrorMessage('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -91,18 +140,19 @@ const Shortlist = () => {
     });
     setUploadedFile(null);
     setErrorMessage(null);
+    setSelectedSourceId(null);
+    setSourceType('blank');
   };
 
   return (
     <div className="space-y-6">
+      {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">
             {searchId ? 'Update Shortlist' : 'Create Shortlist'}
           </h1>
-          <p className="text-muted-foreground">
-            Define criteria and upload job description
-          </p>
+          <p className="text-muted-foreground">Define criteria and upload job description</p>
         </div>
         {searchId && (
           <div className="flex items-center space-x-2">
@@ -112,21 +162,19 @@ const Shortlist = () => {
         )}
       </div>
 
+      {/* FORM + JD Upload */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="bg-card/50 backdrop-blur-sm border-primary/20 glow-primary">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Sparkles className="w-5 h-5 text-primary" />
-              <span>Shortlist Criteria</span>
+              <span>Shortlist Criteria & Candidates Data</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* inputs same as before */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Search Name *
-                </label>
+                <label className="block text-sm font-medium text-foreground mb-2">Search Name *</label>
                 <Input
                   value={formData.searchName}
                   onChange={(e) => setFormData({ ...formData, searchName: e.target.value })}
@@ -136,9 +184,7 @@ const Shortlist = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Job Role *
-                </label>
+                <label className="block text-sm font-medium text-foreground mb-2">Job Role *</label>
                 <Input
                   value={formData.jobRole}
                   onChange={(e) => setFormData({ ...formData, jobRole: e.target.value })}
@@ -148,9 +194,7 @@ const Shortlist = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Required Skills *
-                </label>
+                <label className="block text-sm font-medium text-foreground mb-2">Required Skills *</label>
                 <Textarea
                   value={formData.requiredSkills}
                   onChange={(e) => setFormData({ ...formData, requiredSkills: e.target.value })}
@@ -166,9 +210,7 @@ const Shortlist = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Candidate List *
-                </label>
+                <label className="block text-sm font-medium text-foreground mb-2">Candidate List *</label>
                 <Textarea
                   value={formData.candidateData}
                   onChange={(e) => setFormData({ ...formData, candidateData: e.target.value })}
@@ -178,19 +220,14 @@ const Shortlist = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Number of Candidates to Shortlist
-                </label>
+                <label className="block text-sm font-medium text-foreground mb-2">Number of Candidates</label>
                 <Input
                   type="number"
                   min="1"
                   max="50"
                   value={formData.numberOfCandidates}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      numberOfCandidates: parseInt(e.target.value),
-                    })
+                    setFormData({ ...formData, numberOfCandidates: parseInt(e.target.value) })
                   }
                 />
               </div>
@@ -216,9 +253,61 @@ const Shortlist = () => {
           </CardContent>
         </Card>
 
-        {/* JD Upload Card (same as before) */}
         <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
-          <CardHeader>
+          {/* SOURCE SELECTOR */}
+          <Card className="bg-card/50 border-primary/20">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Database className="w-5 h-5 text-primary" />
+                <span>Import From</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="">
+                <Select
+                  value={sourceType}
+                  onValueChange={(val: 'blank' | 'search' | 'task') => {
+                    setSourceType(val);
+                    setSelectedSourceId(null);
+                    setFormData({
+                      searchName: '',
+                      requiredSkills: '',
+                      numberOfCandidates: 5,
+                      jobRole: '',
+                      customQuestion: '',
+                      candidateData: ''
+                    });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="blank">➕ Blank Shortlist</SelectItem>
+                    <SelectItem value="search">📂 Existing Search</SelectItem>
+                    <SelectItem value="task">📌 Assigned Task</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className='mt-[1vw]'>
+                {sourceType !== 'blank' && (
+                  <Select value={selectedSourceId || ''} onValueChange={setSelectedSourceId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={`Select a ${sourceType}`} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sourceOptions.map((opt: any) => (
+                        <SelectItem key={opt.id} value={opt.id.toString()}>
+                          {opt.searchName || opt.title || `ID ${opt.id}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </CardContent>  
+          </Card>
+          <CardHeader className='mt-[8vw]'>
             <CardTitle className="flex items-center space-x-2">
               <FileText className="w-5 h-5 text-accent" />
               <span>Job Description (PDF)</span>

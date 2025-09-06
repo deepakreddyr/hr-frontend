@@ -1,3 +1,4 @@
+// Sidebar.tsx
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -10,12 +11,14 @@ import {
   CreditCard,
   HelpCircle,
   LogOut,
-  Star
+  Star,
+  ClipboardList,
+  Inbox
 } from 'lucide-react';
 
 const Sidebar = () => {
   const location = useLocation();
-  const role = localStorage.getItem("role"); // 👈 read role from localStorage
+  const role = localStorage.getItem("role"); // "admin" | "user" | "master"
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
@@ -23,28 +26,24 @@ const Sidebar = () => {
     { icon: Heart, label: 'Saved Profiles', path: '/saved-profiles' },
     { icon: Star, label: 'Final Selects', path: '/final-selects' },
     { icon: User, label: 'Account', path: '/account' },
-    // Billing is shown only if role is admin or master
-    ...(role === "admin" || role === "master"
-      ? [{ icon: CreditCard, label: 'Billing', path: '/billing' }]
-      : []),
     { icon: Settings, label: 'Settings', path: '/settings' },
     { icon: HelpCircle, label: 'Help', path: '/help' },
   ];
 
+  // Only Admin or Master can see Billing
+  if (role === "admin" || role === "master") {
+    menuItems.splice(5, 0, { icon: CreditCard, label: 'Billing', path: '/billing' });
+    menuItems.splice(6, 0, { icon: ClipboardList, label: 'Create Task', path: '/create-task' });
+  }
+
+  // Only User sees Inbox
+  if (role === "user") {
+    menuItems.splice(3, 0, { icon: Inbox, label: 'Inbox', path: '/inbox' });
+  }
+
   const handleLogout = async () => {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/logout`, {
-      method: 'GET',
-      headers: {
-        "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-        "Content-Type": "application/json",
-      },
-    });
-    const data = await response.json();
-    if (data.success) {
-      localStorage.clear();
-    } else {
-      alert('Logout failed: ' + data.message);
-    }
+    localStorage.clear();
+    window.location.href = "/login";
   };
 
   return (
@@ -78,11 +77,7 @@ const Sidebar = () => {
                   : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
               }`}
             >
-              <Icon
-                className={`w-5 h-5 ${
-                  isActive ? 'text-primary' : 'group-hover:text-primary'
-                } transition-colors`}
-              />
+              <Icon className={`w-5 h-5 ${isActive ? 'text-primary' : 'group-hover:text-primary'}`} />
               <span className="font-medium">{item.label}</span>
             </Link>
           );
@@ -91,14 +86,13 @@ const Sidebar = () => {
 
       {/* Footer */}
       <div className="p-4 border-t border-border">
-        <Link
-          to="/login"
-          onClick={() => handleLogout()}
-          className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-red-100 text-red-600 hover:text-red-800 transition"
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center space-x-3 px-4 py-3 rounded-lg hover:bg-red-100 text-red-600 hover:text-red-800 transition"
         >
           <LogOut className="w-5 h-5" />
           <span className="font-medium">Logout</span>
-        </Link>
+        </button>
       </div>
     </div>
   );

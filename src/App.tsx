@@ -21,7 +21,8 @@ import Settings from "./pages/Settings";
 import Help from "./pages/Help";
 import Loading from "./pages/Loading";
 import PrivateRoute from "./routes/PrivateRoute";
-
+import CreateTask from "./pages/CreateTask";
+import TaskDrawer from "./pages/TaskInBox";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -170,7 +171,22 @@ const App = () => (
                 </PrivateRoute>
               }
             />
-
+             <Route
+              path="/create-task"
+              element={
+                <PrivateRoute>
+                  <Layout><CreateTask /></Layout>
+                </PrivateRoute>
+              }
+            />
+             <Route
+              path="/inbox"
+              element={
+                <PrivateRoute>
+                  <Layout><TaskDrawer /></Layout>
+                </PrivateRoute>
+              }
+            />
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
           </Routes>
