@@ -19,6 +19,7 @@ import {
   BarChart,
   Bar,
 } from 'recharts';
+import DashboardSkeleton from '@/components/ui/DashboardSkeleton';
 
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
@@ -88,10 +89,7 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-10 text-muted-foreground">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-        Loading dashboard...
-      </div>
+        <DashboardSkeleton />
     );
   }
 

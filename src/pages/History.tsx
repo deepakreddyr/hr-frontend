@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Calendar, User, Eye } from 'lucide-react';
+import { Search, Calendar, User, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import HistorySkeleton from '@/components/ui/HistorySkeleton';
+
 
 const History = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [searches, setSearches] = useState([]);
+  const [searches, setSearches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchSearches = async () => {
@@ -59,7 +61,7 @@ const History = () => {
         navigate(`/shortlist/${searchId}`);
       } else if (status === "process") {
         navigate(`/process/${searchId}`);
-      } else if (status === "results"){
+      } else if (status === "results") {
         navigate(`/results/${searchId}`);
       }
     } catch (error) {
@@ -119,43 +121,48 @@ const History = () => {
                 <th className="text-left p-4 text-sm font-medium text-muted-foreground">Action</th>
               </tr>
             </thead>
-            <tbody>
-              {filteredSearches.map((search) => (
-                <tr
-                  key={search.id}
-                  onClick={() => handleRowClick(search.id)}
-                  className="border-b border-border hover:bg-secondary/30 cursor-pointer transition-colors group"
-                >
-                  <td className="p-4">
-                    <div className="font-medium text-foreground">{search.search_name || '-'}</div>
-                  </td>
-                  <td className="p-4">
-                    <div className="font-medium text-foreground">{search.rc_name || '-'}</div>
-                  </td>
-                  <td className="p-4">{search.job_role || '-'}</td>
-                  <td className="p-4 text-sm text-muted-foreground max-w-xs truncate">
-                    {search.key_skills || '-'}
-                  </td>
-                  <td className="p-4 text-sm text-muted-foreground">
-                    {search.created_at ? new Date(search.created_at).toLocaleDateString() : '-'}
-                  </td>
-                  <td className="p-4">
-                    <span className="bg-primary/20 text-primary px-2 py-1 rounded-full text-sm font-medium">
-                      {Array.isArray(search.shortlisted_index)
-                        ? search.shortlisted_index.length
-                        : (typeof search.shortlisted_index === 'string'
-                          ? JSON.parse(search.shortlisted_index).length
-                          : 0)}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    <button className="text-primary hover:text-primary/80 transition-colors opacity-0 group-hover:opacity-100">
-                      <Eye className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+
+            {loading ? (
+              <HistorySkeleton rows={5} />
+            ) : (
+              <tbody>
+                {filteredSearches.map((search) => (
+                  <tr
+                    key={search.id}
+                    onClick={() => handleRowClick(search.id)}
+                    className="border-b border-border hover:bg-secondary/30 cursor-pointer transition-colors group"
+                  >
+                    <td className="p-4">
+                      <div className="font-medium text-foreground">{search.search_name || '-'}</div>
+                    </td>
+                    <td className="p-4">
+                      <div className="font-medium text-foreground">{search.rc_name || '-'}</div>
+                    </td>
+                    <td className="p-4">{search.job_role || '-'}</td>
+                    <td className="p-4 text-sm text-muted-foreground max-w-xs truncate">
+                      {search.key_skills || '-'}
+                    </td>
+                    <td className="p-4 text-sm text-muted-foreground">
+                      {search.created_at ? new Date(search.created_at).toLocaleDateString() : '-'}
+                    </td>
+                    <td className="p-4">
+                      <span className="bg-primary/20 text-primary px-2 py-1 rounded-full text-sm font-medium">
+                        {Array.isArray(search.shortlisted_index)
+                          ? search.shortlisted_index.length
+                          : (typeof search.shortlisted_index === 'string'
+                            ? JSON.parse(search.shortlisted_index).length
+                            : 0)}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <button className="text-primary hover:text-primary/80 transition-colors opacity-0 group-hover:opacity-100">
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            )}
           </table>
         </div>
       </div>
