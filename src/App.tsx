@@ -23,6 +23,8 @@ import Loading from "./pages/Loading";
 import PrivateRoute from "./routes/PrivateRoute";
 import CreateTask from "./pages/CreateTask";
 import TaskDrawer from "./pages/TaskInBox";
+import ShortlistSimple from "./pages/ShortlistSimple";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -70,6 +72,22 @@ const App = () => (
               element={
                 <PrivateRoute>
                   <Layout><SavedProfiles /></Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/simple-shortlist"
+              element={
+                <PrivateRoute>
+                  <Layout><ShortlistSimple /></Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/simple-shortlist/:searchId"
+              element={
+                <PrivateRoute>
+                  <Layout><TaskDrawer /></Layout>
                 </PrivateRoute>
               }
             />

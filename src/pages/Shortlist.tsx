@@ -283,9 +283,9 @@ const Shortlist = () => {
                     <SelectValue placeholder="Choose source" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="blank">➕ Blank Shortlist</SelectItem>
-                    <SelectItem value="search">📂 Existing Search</SelectItem>
-                    <SelectItem value="task">📌 Assigned Task</SelectItem>
+                    <SelectItem value="blank">None</SelectItem>
+                    <SelectItem value="search">Existing Search</SelectItem>
+                    <SelectItem value="task">Assigned Task</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
