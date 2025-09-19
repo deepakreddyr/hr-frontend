@@ -1,35 +1,86 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Phone, Download, Star, UserCheck, ArrowLeft, Clock
+  Phone,
+  Download,
+  Star,
+  ArrowLeft,
+  Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-const Transcript = () => {
-  const { candidateId } = useParams();
+interface Candidate {
+  name: string;
+  phone: string;
+  email: string;
+  skills: string[];
+  matchScore: number;
+  callStatus: string;
+  totalExperience: string;
+  relevantExperience: string;
+  summary: string;
+  liked: boolean;
+  hiringStatus: string;
+  joinStatus: string;
+  callDuration?: string;
+}
+
+interface TranscriptEntry {
+  speaker: 'ai' | 'candidate';
+  message: string;
+  timestamp: string;
+}
+
+interface Evaluation {
+  score: number;
+  strengths?: string[];
+  concerns?: string[];
+  summary?: string;
+}
+
+interface StructuredData {
+  [key: string]: any;
+}
+
+interface CallInfo {
+  duration?: string;
+  status?: string;
+  summary?: string;
+}
+
+const Transcript: React.FC = () => {
+  const { candidateId } = useParams<{ candidateId: string }>();
   const navigate = useNavigate();
-  const [callSummary, setCallSummary] = useState('');
-  const [candidate, setCandidate] = useState<any>(null);
-  const [transcript, setTranscript] = useState([]);
-  const [evaluation, setEvaluation] = useState<any>(null);
-  const [structuredData, setStructuredData] = useState<any>({});
+
   const [loading, setLoading] = useState(true);
+  const [candidate, setCandidate] = useState<Candidate | null>(null);
+  const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
+  const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
+  const [structuredData, setStructuredData] = useState<StructuredData>({});
+  const [callSummary, setCallSummary] = useState<string>('');
 
   useEffect(() => {
     const fetchTranscriptData = async () => {
       try {
         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/transcript/${candidateId}`, {
           headers: {
-          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-          "Content-Type": "application/json",
-        },
+            "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+            "Content-Type": "application/json",
+          },
         });
+
+        if (!res.ok) throw new Error('Failed to fetch');
+
         const data = await res.json();
+
+        setCandidate({
+          ...data.candidate,
+          callDuration: data.call?.duration
+        });
         setTranscript(data.transcript || []);
-        setCandidate(data.candidate || {});
-        setEvaluation(data.evaluation || {});
-        setStructuredData(data.structured || {}); // ✅ FIXED here
+        setEvaluation(data.evaluation || null);
+        setStructuredData(data.structured || {});
         setCallSummary(data.call?.summary || '');
       } catch (err) {
         console.error('Failed to load transcript:', err);
@@ -47,9 +98,15 @@ const Transcript = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button variant="outline" size="sm" onClick={() => navigate(-1)} className="border-primary/30 hover:bg-primary/10">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(-1)}
+            className="border-primary/30 hover:bg-primary/10"
+          >
             <ArrowLeft className="w-4 h-4 mr-2" /> Back
           </Button>
           <div>
@@ -61,9 +118,6 @@ const Transcript = () => {
           <Button variant="outline" className="border-accent/30 text-accent hover:bg-accent/10">
             <Download className="w-4 h-4 mr-2" /> Download Transcript
           </Button>
-          {/* <Button className="bg-primary hover:bg-primary/90 glow-primary">
-            <UserCheck className="w-4 h-4 mr-2" /> Mark as Final Select
-          </Button> */}
         </div>
       </div>
 
@@ -74,53 +128,58 @@ const Transcript = () => {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <div className="w-10 h-10 bg-gradient-to-r from-primary to-accent rounded-full flex items-center justify-center text-white font-bold">
-                  {candidate.name?.split(' ').map(n => n[0]).join('')}
+                  {candidate?.name?.split(' ').map(n => n[0]).join('')}
                 </div>
                 <div>
-                  <span className="text-lg">{candidate.name}</span>
+                  <span className="text-lg">{candidate?.name}</span>
                 </div>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Contact Info */}
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
                   <Phone className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground">{candidate.phone}</span>
+                  <span className="text-sm text-foreground">{candidate?.phone}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Clock className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground">Duration: {candidate.callDuration || 'N/A'}</span>
+                  <span className="text-sm text-foreground">
+                    Duration: {candidate?.callDuration || 'N/A'}
+                  </span>
                 </div>
               </div>
 
+              {/* Match Score */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Match Score</span>
                   <span className="px-2 py-1 rounded-full text-sm font-medium bg-green-400/20 text-green-400">
-                    {candidate.matchScore}%
+                    {candidate?.matchScore}%
                   </span>
                 </div>
                 <div className="w-full bg-secondary rounded-full h-2">
                   <div
                     className="bg-gradient-to-r from-primary to-accent h-2 rounded-full"
-                    style={{ width: `${candidate.matchScore}%` }}
+                    style={{ width: `${candidate?.matchScore}%` }}
                   />
                 </div>
               </div>
 
+              {/* Experience & Status */}
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Total Experience</span>
-                  <span className="text-sm text-foreground">{candidate.totalExperience}</span>
+                  <span className="text-sm text-foreground">{candidate?.totalExperience}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Relevant Experience</span>
-                  <span className="text-sm text-foreground">{candidate.relevantExperience}</span>
+                  <span className="text-sm text-foreground">{candidate?.relevantExperience}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Call Status</span>
                   <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-400/20 text-green-400">
-                    {candidate.callStatus ? candidate.callStatus : 'Not Called'}
+                    {candidate?.callStatus || 'Not Called'}
                   </span>
                 </div>
               </div>
@@ -140,8 +199,8 @@ const Transcript = () => {
             </CardContent>
           </Card>
 
-          {/* Evaluation Summary */}
-          {/* {evaluation && (
+          {/* AI Evaluation */}
+          {evaluation && (
             <Card className="bg-card/50 backdrop-blur-sm border-accent/20 mt-6">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -150,46 +209,72 @@ const Transcript = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between mb-2">
+                {/* Overall Score */}
+                {/* <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-foreground">Overall Score</span>
-                  <span className="text-2xl font-bold text-accent">{evaluation.score}/100</span>
+                  <span className="text-2xl font-bold text-accent">{.score}/100</span>
+                </div> */}
+
+                {/* Candidate Match Score */}
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-foreground">Candidate Match Score</span>
+                  <span className="px-2 py-1 rounded-full text-sm font-medium bg-green-400/20 text-green-400">
+                    {candidate?.matchScore}%
+                  </span>
                 </div>
-                <div>
-                  <h4 className="text-sm font-medium text-foreground mb-2">Strengths</h4>
-                  <ul className="space-y-1">
-                    {evaluation.strengths?.map((s: string, i: number) => (
-                      <li key={i} className="text-xs text-green-400 flex items-start">
-                        <span className="w-1 h-1 rounded-full bg-green-400 mt-2 mr-2 flex-shrink-0" />
-                        {s}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-foreground mb-2">Concerns</h4>
-                  <ul className="space-y-1">
-                    {evaluation.concerns?.map((c: string, i: number) => (
-                      <li key={i} className="text-xs text-yellow-400 flex items-start">
-                        <span className="w-1 h-1 rounded-full bg-yellow-400 mt-2 mr-2 flex-shrink-0" />
-                        {c}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+
+                {/* AI Summary */}
+                {candidate?.summary && (
+                  <div>
+                    <h4 className="text-sm font-medium text-foreground mb-1">Summary</h4>
+                    <p className="text-sm text-foreground leading-relaxed">{candidate.summary}</p>
+                  </div>
+                )}
+
+                {/* Strengths */}
+                {evaluation.strengths && evaluation.strengths.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-foreground mb-2">Strengths</h4>
+                    <ul className="space-y-1">
+                      {evaluation.strengths.map((s, i) => (
+                        <li key={i} className="text-xs text-green-400 flex items-start">
+                          <span className="w-1 h-1 rounded-full bg-green-400 mt-2 mr-2 flex-shrink-0" />
+                          {s}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Concerns */}
+                {evaluation.concerns && evaluation.concerns.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-foreground mb-2">Concerns</h4>
+                    <ul className="space-y-1">
+                      {evaluation.concerns.map((c, i) => (
+                        <li key={i} className="text-xs text-yellow-400 flex items-start">
+                          <span className="w-1 h-1 rounded-full bg-yellow-400 mt-2 mr-2 flex-shrink-0" />
+                          {c}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </CardContent>
             </Card>
-          )} */}
+          )}
         </div>
 
         {/* Transcript Section */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-6">
+          {/* Transcript */}
           <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
             <CardHeader>
               <CardTitle>Conversation Transcript</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4 max-h-[600px] overflow-y-auto">
-                {transcript.map((entry: any, index: number) => (
+                {transcript.map((entry, index) => (
                   <div
                     key={index}
                     className={`flex ${entry.speaker === 'ai' ? 'justify-start' : 'justify-end'}`}
@@ -207,7 +292,7 @@ const Transcript = () => {
                             entry.speaker === 'ai' ? 'text-primary' : 'text-accent'
                           }`}
                         >
-                          {entry.speaker === 'ai' ? 'AI Recruiter' : candidate.name}
+                          {entry.speaker === 'ai' ? 'AI Recruiter' : candidate?.name}
                         </span>
                         <span className="text-xs text-muted-foreground">{entry.timestamp}</span>
                       </div>
@@ -219,13 +304,15 @@ const Transcript = () => {
             </CardContent>
           </Card>
 
-          {/* Summary */}
-          <Card className="bg-card/50 backdrop-blur-sm border-accent/20 mt-6">
+          {/* Call Summary */}
+          <Card className="bg-card/50 backdrop-blur-sm border-accent/20">
             <CardHeader>
               <CardTitle>Call Summary</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-foreground leading-relaxed">{callSummary || 'No summary available.'}</p> {/* ✅ CHANGED */}
+              <p className="text-foreground leading-relaxed">
+                {callSummary || 'No summary available.'}
+              </p>
             </CardContent>
           </Card>
         </div>

@@ -55,7 +55,7 @@ const Sidebar = () => {
             <Search className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-primary">RecruiterAI</h1>
+            <h1 className="text-xl font-bold text-primary">TheHireAI</h1>
             <p className="text-xs text-muted-foreground">HR Automation</p>
           </div>
         </div>

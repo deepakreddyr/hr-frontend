@@ -246,7 +246,7 @@ const Dashboard = () => {
             <SearchIcon className="w-8 h-8 text-white" />
           </div>
           <h4 className="text-lg font-medium text-foreground mb-2">
-            Chat with RecruiterAI
+            Chat with TheHireAI (Coming Soon!)
           </h4>
           <p className="text-muted-foreground mb-4">
             Get instant help with your recruitment tasks

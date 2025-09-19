@@ -17,28 +17,30 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (!btnContainerRef.current) return;
     const [simpleBtn, naukriBtn] = btnContainerRef.current.children;
 
-    gsap.fromTo(
-      simpleBtn,
-      { x: 0, opacity: 0, scale: 0.8 },
-      {
-        x: 80,
-        opacity: 1,
-        scale: 1,
-        duration: 0.5,
-        ease: "elastic.out(1, 0.5)",
-      }
-    );
-
+    // N Search moves first
     gsap.fromTo(
       naukriBtn,
-      { x: 0, opacity: 0, scale: 0.8 },
+      { x: 0, opacity: 0, scale: 0.6 },
       {
         x: -130,
         opacity: 1,
         scale: 1,
-        duration: 0.5,
-        ease: "elastic.out(1, 0.5)",
-        delay: 0.1,
+        duration: 0.7,
+        ease: "power2.out",
+      }
+    );
+
+    // S Search follows with a delay
+    gsap.fromTo(
+      simpleBtn,
+      { x: 0, opacity: 0, scale: 0.6 },
+      {
+        x: 80,
+        opacity: 1,
+        scale: 1,
+        duration: 0.7,
+        ease: "power2.out",
+        delay: 0.15,
       }
     );
   };
@@ -47,13 +49,22 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (!btnContainerRef.current) return;
     const [simpleBtn, naukriBtn] = btnContainerRef.current.children;
 
-    gsap.to([simpleBtn, naukriBtn], {
+    // Collapse in reverse order - S Search first, then N Search
+    gsap.to(simpleBtn, {
       x: 0,
       opacity: 0,
-      scale: 0.8,
-      duration: 0.3,
-      ease: "back.in(1.7)",
-      stagger: 0.05,
+      scale: 0.6,
+      duration: 0.5,
+      ease: "power2.in",
+    });
+
+    gsap.to(naukriBtn, {
+      x: 0,
+      opacity: 0,
+      scale: 0.6,
+      duration: 0.5,
+      ease: "power2.in",
+      delay: 0.1,
       onComplete: () => setExpanded(false),
     });
   };
@@ -68,8 +79,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const handleButtonClick = (path: string) => {
-    collapseMenu(); // collapse with bounce back
-    navigate(path); // then navigate
+    collapseMenu(); // collapse with smooth animation
+    // Add a delay before navigation to let animation complete
+    setTimeout(() => navigate(path), 300);
   };
 
   return (
@@ -84,14 +96,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div ref={btnContainerRef} className="flex items-center absolute right-12">
           <button
             onClick={() => handleButtonClick("/simple-shortlist")}
-            className="bg-blue-500 hover:bg-blue-600 
+            className="bg-blue-500 hover:bg-blue-600 transition-colors duration-200
                        text-white text-sm w-24 h-10 shadow-lg rounded-2xl opacity-0"
           >
             S Search
           </button>
           <button
             onClick={() => handleButtonClick("/shortlist")}
-            className="bg-blue-500 hover:bg-blue-600 
+            className="bg-blue-500 hover:bg-blue-600 transition-colors duration-200
                        text-white text-sm w-24 h-10 shadow-lg rounded-2xl opacity-0 ml-2"
           >
             N Search
@@ -101,8 +113,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Main toggle button */}
         <button
           onClick={toggleMenu}
-          className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-colors
-            ${expanded ? "bg-gray-700/70" : "bg-blue-500 hover:bg-blue-600"} text-white`}
+          className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300
+            ${expanded ? "bg-gray-700/70 rotate-45" : "bg-blue-500 hover:bg-blue-600"} text-white`}
         >
           {expanded ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
         </button>

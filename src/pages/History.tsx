@@ -118,7 +118,7 @@ const History = () => {
                   </div>
                 </th>
                 <th className="text-left p-4 text-sm font-medium text-muted-foreground">Candidates</th>
-                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Action</th>
+                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Type</th>
               </tr>
             </thead>
 
@@ -155,8 +155,8 @@ const History = () => {
                       </span>
                     </td>
                     <td className="p-4">
-                      <button className="text-primary hover:text-primary/80 transition-colors opacity-0 group-hover:opacity-100">
-                        <Eye className="w-4 h-4" />
+                      <button className="text-primary text-white">
+                        {search.search_type}
                       </button>
                     </td>
                   </tr>

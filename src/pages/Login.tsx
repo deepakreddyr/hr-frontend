@@ -65,7 +65,7 @@ const Login = () => {
           <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center mx-auto mb-4 glow-primary animate-float">
             <Search className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">RecruiterAI</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">TheHireAI</h1>
           <p className="text-muted-foreground">AI-Powered HR Recruitment Platform</p>
         </div>
 

@@ -99,15 +99,15 @@ const Billing = () => {
             <div className="grid grid-cols-1 gap-4">
               <div className="grid grid-cols-3 gap-4">
                 {[
-                  { credits: 100, price: 1999 },
-                  { credits: 500, price: 7999, popular: true },
-                  { credits: 1000, price: 14999 }
+                  { credits: 100, price: "19,999" },
+                  { credits: 500, price: "79,999", popular: true },
+                  { credits: 1000, price: "1,49,999" }
                 ].map((pkg, i) => (
                   <Card key={i} className={`p-4 cursor-pointer transition-all ${pkg.popular ? 'border-primary hover:bg-primary/20' : 'hover:bg-primary/20'}`}>
                     <div className="text-center">
                       <p className="text-2xl font-bold text-primary">{pkg.credits}</p>
                       <p className="text-sm text-muted-foreground">Credits</p>
-                      <p className="text-lg font-semibold">${(pkg.price / 100).toFixed(2)}</p>
+                      <p className="text-lg font-semibold">₹{pkg.price}</p>
                       {pkg.popular && <p className="text-xs text-accent">Popular</p>}
                     </div>
                   </Card>
@@ -167,7 +167,6 @@ const Billing = () => {
         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <DollarSign className="w-5 h-5" />
               <span>Payment History</span>
             </CardTitle>
           </CardHeader>

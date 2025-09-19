@@ -260,11 +260,11 @@ const TaskManager: React.FC<TaskManagerProps> = ({ mode, onCreateNewTask }) => {
           onClick={(e) => { e.stopPropagation(); updateTaskStatus(task.id, "In Progress"); }}
         >Start Working ⚡</button>
       )}
-      {task.status !== "Completed" && (
+      {/* {task.status !== "Completed" && (
         <button className="btn-primary" onClick={(e) => { e.stopPropagation(); updateTaskStatus(task.id, "Completed"); }}>
           Mark Completed ✅
         </button>
-      )}
+      )} */}
     </div>
   );
 
