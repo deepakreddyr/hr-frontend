@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import { toast } from "@/components/ui/use-toast"; // assuming shadcn toast
 
 // Input with leading icon
 const IconInput = ({
@@ -122,12 +123,23 @@ const ShortlistForm = () => {
       if (data.success) {
         navigate(`/results/${data.search_id}`);
       } else {
-        alert(data.message || "Submission failed");
+        toast({
+        title: "No candidates shortlisted",
+        description:
+          data.message + " Try again with updated job/resume data.",
+        variant: "destructive", // red styling if using shadcn
+        duration: Infinity,
+      });
         setSubmitting(false);
       }
     } catch (err) {
       console.error(err);
-      alert("Error submitting form");
+      toast({
+      title: "Error submitting form",
+      description: "Something went wrong. Please try again.",
+      variant: "destructive",
+      duration: Infinity,
+    });
       setSubmitting(false);
     }
   };
