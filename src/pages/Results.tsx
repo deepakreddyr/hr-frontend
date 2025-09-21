@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
-  Phone, Heart, UserCheck, Star, Filter, Download, SortAsc, Search, CheckSquare, Trash2
+  Phone, Heart, UserCheck, Star, Filter, Download, SortAsc, Search, CheckSquare, Trash2, Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,7 @@ const Results = () => {
   const [candidates, setCandidates] = useState([]);
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCandidates, setSelectedCandidates] = useState<number[]>([]);
+  const [selectedCandidates, setSelectedCandidates] = useState([]);
   const [sortBy, setSortBy] = useState('match_score');
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -54,8 +54,7 @@ const Results = () => {
     if (searchId) fetchCandidates();
   }, [searchId]);
 
-
-  const handleCandidateSelect = (candidateId: number) => {
+  const handleCandidateSelect = (candidateId) => {
     setSelectedCandidates(prev =>
       prev.includes(candidateId) ? prev.filter(id => id !== candidateId) : [...prev, candidateId]
     );
@@ -69,7 +68,7 @@ const Results = () => {
     }
   };
 
-  const handleLikeToggle = async (candidateId: number, currentLiked: boolean) => {
+  const handleLikeToggle = async (candidateId, currentLiked) => {
     try {
       await axios.post(`${import.meta.env.VITE_API_URL}/api/like-candidate`, {
         candidate_id: candidateId,
@@ -212,7 +211,7 @@ const handleCallAllCandidates = async () => {
       return 0;
     });
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status) => {
     switch (status) {
       case 'completed': return 'text-green-400 bg-green-400/20';
       case 'scheduled': return 'text-blue-400 bg-blue-400/20';
@@ -222,7 +221,7 @@ const handleCallAllCandidates = async () => {
     }
   };
 
-  const getMatchScoreColor = (score: number) => {
+  const getMatchScoreColor = (score) => {
     if (score >= 90) return 'text-green-400 bg-green-400/20';
     if (score >= 80) return 'text-yellow-400 bg-yellow-400/20';
     return 'text-red-400 bg-red-400/20';
@@ -232,6 +231,66 @@ const handleCallAllCandidates = async () => {
     return (
       <div className="text-center py-12">
         <p className="text-lg font-medium text-muted-foreground">Loading candidates...</p>
+      </div>
+    );
+  }
+
+  // Empty state when no candidates are found
+  if (candidates.length === 0) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Search Results</h1>
+            <p className="text-muted-foreground">Search #{searchId}</p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Button onClick={handleViewFinalSelects} className="bg-accent hover:bg-accent/90 text-white glow-accent">
+              <UserCheck className="w-4 h-4 mr-2" />
+              View Final Selects
+            </Button>
+          </div>
+        </div>
+
+        {/* Stats showing zeros */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[
+            { label: "Shortlisted Count", value: 0, icon: <CheckSquare />, color: "primary" },
+            { label: "Calls Scheduled", value: 0, icon: <Phone />, color: "blue-400" },
+            { label: "Re-Scheduled", value: 0, icon: <Phone />, color: "yellow-400" },
+            { label: "Total Found", value: 0, icon: <Star />, color: "accent" }
+          ].map((stat, idx) => (
+            <Card key={idx} className={`bg-card/50 backdrop-blur-sm border-${stat.color}/20`}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">{stat.label}</p>
+                    <p className={`text-2xl font-bold text-${stat.color}`}>{stat.value}</p>
+                  </div>
+                  <div className={`w-8 h-8 text-${stat.color}`}>{stat.icon}</div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Empty state message */}
+        <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+          <CardContent className="p-12">
+            <div className="text-center space-y-6">
+              <div className="w-16 h-16 bg-muted/20 rounded-full flex items-center justify-center mx-auto">
+                <Users className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-foreground mb-2">No Candidates Shortlisted</h2>
+                <p className="text-muted-foreground max-w-md mx-auto">
+                  We couldn't find any candidates matching your search criteria. Try adjusting your search parameters or expanding your requirements.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -258,7 +317,6 @@ const handleCallAllCandidates = async () => {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Repeat Cards for stats */}
         {[
           { label: "Shortlisted Count", value: stats.shortlisted, icon: <CheckSquare />, color: "primary" },
           { label: "Calls Scheduled", value: stats.callsScheduled, icon: <Phone />, color: "blue-400" },
@@ -400,7 +458,7 @@ const handleCallAllCandidates = async () => {
                           size="sm"
                           variant="outline"
                           className="border-primary/30"
-                          onClick={() => handleCallCandidate(candidate)}  // <-- updated
+                          onClick={() => handleCallCandidate(candidate)}
                         >
                           Call
                         </Button>
@@ -456,17 +514,18 @@ const handleCallAllCandidates = async () => {
           </div>
         </CardContent>
       </Card>
+      
       {showCallSuccess && (
-      <div className="fixed bottom-5 right-5 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg animate-slide-up z-50">
-        ✅ Call to <strong>{callSuccessName}</strong> initiated successfully!
-      </div>
-    )}
-    {showFinalSuccess && (
-  <div className="fixed bottom-5 right-5 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg animate-slide-up z-50">
-    🎉 Selected candidates added to <strong>Final Selects</strong>!
-  </div>
-)}
-  
+        <div className="fixed bottom-5 right-5 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg animate-slide-up z-50">
+          Call to <strong>{callSuccessName}</strong> initiated successfully!
+        </div>
+      )}
+      
+      {showFinalSuccess && (
+        <div className="fixed bottom-5 right-5 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg animate-slide-up z-50">
+          Selected candidates added to <strong>Final Selects</strong>!
+        </div>
+      )}
     </div>
   );
 };
