@@ -1,4 +1,4 @@
-import React, { useState, DragEvent } from "react";
+import React, { useState, useEffect, DragEvent } from "react";
 import {
   Building,
   MapPin,
@@ -7,11 +7,13 @@ import {
   FileText,
   Upload,
   ListChecks,
+  Database,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast"; // assuming shadcn toast
@@ -73,6 +75,64 @@ const ShortlistForm = () => {
 
   const [submitting, setSubmitting] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+
+  // Task import states
+  const [sourceType, setSourceType] = useState<'blank' | 'task'>('blank');
+  const [taskOptions, setTaskOptions] = useState<any[]>([]);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+
+  // Fetch tasks when sourceType changes to 'task'
+  useEffect(() => {
+    const fetchTasks = async () => {
+      if (sourceType === 'task') {
+        setLoadingTasks(true);
+        try {
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/inbox`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+          });
+          const data = await response.json();
+          
+          if (data.success) {
+            setTaskOptions(data.tasks || []);
+          } else {
+            console.error('Error fetching tasks:', data.error);
+            setTaskOptions([]);
+          }
+        } catch (error) {
+          console.error('Error fetching tasks:', error);
+          setTaskOptions([]);
+        } finally {
+          setLoadingTasks(false);
+        }
+      } else {
+        setTaskOptions([]);
+      }
+    };
+
+    fetchTasks();
+  }, [sourceType]);
+
+  // Prefill form when a task is selected
+  useEffect(() => {
+    if (!selectedTaskId || sourceType !== 'task') return;
+
+    const selectedTask = taskOptions.find(task => task.id.toString() === selectedTaskId);
+    
+    if (selectedTask) {
+      // Map task fields to form fields based on your database schema
+      setFormData(prev => ({
+        ...prev,
+        searchName: selectedTask.title || '',
+        jobRole: selectedTask.job_role || '',
+        skills: selectedTask.skills || '',
+        hiringCompany: selectedTask.company_name || '',
+        companyLocation: selectedTask.job_location || '',
+        // Note: resumeLink can be populated from notes if needed
+        // resumeLink: selectedTask.notes?.includes('http') ? selectedTask.notes : prev.resumeLink,
+      }));
+    }
+  }, [selectedTaskId, sourceType, taskOptions]);
 
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -144,6 +204,30 @@ const ShortlistForm = () => {
     }
   };
 
+  const handleReset = () => {
+    setFormData({
+      searchName: "",
+      hiringCompany: "",
+      hrCompany: "",
+      jobRole: "",
+      skills: "",
+      companyLocation: "",
+      remoteWork: false,
+      contractHiring: false,
+      resumeLink: "",
+      numCandidates: 5,
+      jdFile: null,
+    });
+    setSelectedTaskId(null);
+    setSourceType('blank');
+  };
+
+  const handleSourceTypeChange = (val: 'blank' | 'task') => {
+    setSourceType(val);
+    setSelectedTaskId(null);
+    // Don't reset form data immediately - let user decide
+  };
+
   return (
     <form onSubmit={handleSubmit} className="max-w-6xl mx-auto p-6 space-y-6">
       <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center space-x-2">
@@ -153,6 +237,64 @@ const ShortlistForm = () => {
       <p className="text-muted-foreground mb-6">
         Fill in job details and upload resumes to start candidate shortlisting.
       </p>
+
+      {/* Task Import Section */}
+      <Card className="bg-card/50 border-primary/20">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Database className="w-5 h-5 text-primary" />
+            <span>Import From Task (Optional)</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">Import Option</label>
+              <Select value={sourceType} onValueChange={handleSourceTypeChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose import option" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="blank">Start from scratch</SelectItem>
+                  <SelectItem value="task">Import from assigned task</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {sourceType === 'task' && (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Select Task
+                </label>
+                <Select 
+                  value={selectedTaskId || ''} 
+                  onValueChange={setSelectedTaskId}
+                  disabled={loadingTasks}
+                >
+                  <SelectTrigger>
+                    <SelectValue 
+                      placeholder={loadingTasks ? 'Loading tasks...' : 'Select a task'} 
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {taskOptions.length === 0 && !loadingTasks ? (
+                      <SelectItem value="no-options" disabled>
+                        No tasks found
+                      </SelectItem>
+                    ) : (
+                      taskOptions.map((task: any) => (
+                        <SelectItem key={task.id} value={task.id.toString()}>
+                          {task.title || `Task ID ${task.id}`}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+        </CardContent>  
+      </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Left Column */}
@@ -318,8 +460,8 @@ const ShortlistForm = () => {
         </Card>
       </div>
 
-      {/* Submit */}
-      <div className="flex justify-center">
+      {/* Submit & Reset */}
+      <div className="flex justify-center space-x-4">
         <Button
           type="submit"
           disabled={submitting}
@@ -332,6 +474,14 @@ const ShortlistForm = () => {
           ) : (
             "Submit Shortlist"
           )}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleReset}
+          className="border-primary/30 hover:bg-primary/10 px-6 py-2"
+        >
+          Reset
         </Button>
       </div>
     </form>
