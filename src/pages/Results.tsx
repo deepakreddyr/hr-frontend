@@ -8,6 +8,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+// IMPORTANT: You must import your actual toast utility here
+// e.g., import { toast } from '@/components/ui/use-toast'; 
+// or define a placeholder if your setup is external. 
+// For this code, I will use a simple console.log based placeholder:
+const toast = {
+    success: (message) => console.log(`TOAST SUCCESS: ${message}`),
+    error: (message) => console.error(`TOAST ERROR: ${message}`),
+    warning: (message) => console.warn(`TOAST WARNING: ${message}`),
+};
 
 const Results = () => {
   const { searchId } = useParams();
@@ -27,6 +36,11 @@ const Results = () => {
   const [showCallSuccess, setShowCallSuccess] = useState(false);
   const [callSuccessName, setCallSuccessName] = useState('');
   const [showFinalSuccess, setShowFinalSuccess] = useState(false);
+  const [showCustomQuestionModal, setShowCustomQuestionModal] = useState(false);
+  const [customQuestion, setCustomQuestion] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [hasGeneratedQuestion, setHasGeneratedQuestion] = useState(false);
+  const [generatedOptions, setGeneratedOptions] = useState([]); 
 
   useEffect(() => {
     const fetchCandidates = async () => {
@@ -82,6 +96,7 @@ const Results = () => {
       );
     } catch (err) {
       console.error("Failed to toggle like", err);
+      toast.error("Failed to update like status.");
     }
   };
 
@@ -94,12 +109,89 @@ const Results = () => {
           "Content-Type": "application/json",
         }},);
       setShowFinalSuccess(true);
-
-    setTimeout(() => {
-      setShowFinalSuccess(false);
-    }, 3000);
+      setTimeout(() => {
+        setShowFinalSuccess(false);
+      }, 3000);
+      toast.success("Candidates added to Final Selects.");
     } catch (error) {
       console.error("Failed to add to final selects:", error);
+      toast.error("Failed to add candidates to final selects.");
+    }
+  };
+
+  const handleAddCustomQuestion = () => {
+    setShowCustomQuestionModal(true);
+  };
+
+  const handleSelectGeneratedOption = (question) => {
+    setCustomQuestion(question);
+  };
+
+  const handleGenerateQuestion = async () => {
+    if (hasGeneratedQuestion) {
+      toast.warning("AI question has already been generated for this search.");
+      return;
+    }
+    
+    setIsGenerating(true);
+    try {
+      const token = localStorage.getItem("access_token");
+
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/get-questions?search_id=${searchId}`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      
+      if (res.data.success && res.data.questions && res.data.questions.length > 0) {
+        setGeneratedOptions(res.data.questions); 
+        setCustomQuestion(res.data.questions[0]);
+        setHasGeneratedQuestion(true); 
+        toast.success("AI questions generated successfully. Please select one.");
+      } else {
+        toast.error("AI failed to generate questions. Please try again or enter a custom one.");
+      }
+    } catch (error) {
+      console.error("Failed to generate question", error.response?.data || error.message);
+      toast.error(`Failed to generate question: ${error.response?.data?.error || "Server error"}`);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleSaveCustomQuestion = async () => {
+    if (!customQuestion.trim()) {
+      toast.warning("Please enter or select a question to save.");
+      return;
+    }
+    
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+        toast.error("Authentication error. Please log in again.");
+        return;
+    }
+
+    try {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/custom-question`, {
+        search_id: searchId,
+        question: customQuestion
+      }, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        }
+      });
+      
+      toast.success("Custom question saved successfully!");
+      setShowCustomQuestionModal(false);
+      setCustomQuestion('');
+      setGeneratedOptions([]); 
+      setHasGeneratedQuestion(true); 
+
+    } catch (error) {
+      console.error("Failed to save custom question", error.response?.data || error.message);
+      toast.error(`Failed to save custom question: ${error.response?.data?.error || "Server error"}`);
     }
   };
 
@@ -109,7 +201,7 @@ const Results = () => {
 
   const handleCallCandidate = async (candidate) => {
   try {
-    const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/call-single`, {
+    await axios.post(`${import.meta.env.VITE_API_URL}/api/call-single`, {
       search_id: searchId,
       name: candidate.name,
       phone: candidate.phone,
@@ -120,17 +212,15 @@ const Results = () => {
           "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
           "Content-Type": "application/json",
         }}, );
-
     setCallSuccessName(candidate.name);
     setShowCallSuccess(true);
-
-    // Hide the message after 3 seconds
     setTimeout(() => {
       setShowCallSuccess(false);
     }, 3000);
+    toast.success(`Call initiated for ${candidate.name}.`);
   } catch (error) {
     console.error("Failed to call candidate", error);
-    alert("Failed to call candidate.");
+    toast.error("Failed to initiate call for candidate.");
   }
 };
 
@@ -144,25 +234,22 @@ const handleCallSelectedCandidates = async () => {
       company: c.company || '',
       candidate_id: c.id
     }));
-
-    const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/call`, {
+    await axios.post(`${import.meta.env.VITE_API_URL}/api/call`, {
       search_id: searchId,
       candidates: payload
     },{headers: {
           "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
           "Content-Type": "application/json",
         },});
-
     
     setShowCallSuccess(true);
-
-    // Hide the message after 3 seconds
     setTimeout(() => {
       setShowCallSuccess(false);
     }, 3000);
+    toast.success(`${selectedCandidates.length} calls initiated successfully.`);
   } catch (error) {
     console.error("Failed to call selected candidates", error);
-    alert("Failed to initiate calls.");
+    toast.error("Failed to initiate calls for selected candidates.");
   }
 };
 
@@ -175,19 +262,17 @@ const handleCallAllCandidates = async () => {
       company: c.company || '',
       candidate_id: c.id
     }));
-
-    const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/call`, {
-      search_id: searchId,   // <-- add this
+    await axios.post(`${import.meta.env.VITE_API_URL}/api/call`, {
+      search_id: searchId,
       candidates: payload
     },{headers: {
           "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
           "Content-Type": "application/json",
         },});
-
-    alert("Calls initiated for all candidates");
+    toast.success(`Calls initiated for all ${candidates.length} candidates.`);
   } catch (error) {
     console.error("Failed to call all candidates", error);
-    alert("Failed to initiate calls.");
+    toast.error("Failed to initiate calls for all candidates.");
   }
 };
 
@@ -197,11 +282,9 @@ const handleCallAllCandidates = async () => {
         candidate.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         candidate.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         candidate.skills.toLowerCase().includes(searchTerm.toLowerCase());
-
       if (filter === 'liked') return candidate.liked && matchesSearch;
       if (filter === 'completed') return candidate.call_status === 'completed' && matchesSearch;
       if (filter === 'high-match') return candidate.match_score >= 90 && matchesSearch;
-
       return matchesSearch;
     })
     .sort((a, b) => {
@@ -252,7 +335,6 @@ const handleCallAllCandidates = async () => {
             </Button>
           </div>
         </div>
-
         {/* Stats showing zeros */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[
@@ -274,7 +356,6 @@ const handleCallAllCandidates = async () => {
             </Card>
           ))}
         </div>
-
         {/* Empty state message */}
         <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
           <CardContent className="p-12">
@@ -304,6 +385,9 @@ const handleCallAllCandidates = async () => {
           <p className="text-muted-foreground">Found {candidates.length} candidates for search #{searchId}</p>
         </div>
         <div className="flex items-center space-x-3">
+          <Button onClick={handleAddCustomQuestion} className="bg-accent hover:bg-accent/90 text-white glow-accent">
+            Add Custom Question            
+          </Button>
           <Button onClick={handleViewFinalSelects} className="bg-accent hover:bg-accent/90 text-white glow-accent">
             <UserCheck className="w-4 h-4 mr-2" />
             View Final Selects
@@ -314,7 +398,6 @@ const handleCallAllCandidates = async () => {
           </Button>
         </div>
       </div>
-
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
@@ -336,7 +419,6 @@ const handleCallAllCandidates = async () => {
           </Card>
         ))}
       </div>
-
       {/* Filters */}
       <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
         <CardContent className="p-4">
@@ -380,7 +462,6 @@ const handleCallAllCandidates = async () => {
           </div>
         </CardContent>
       </Card>
-
       {/* Table */}
       <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
         <CardHeader>
@@ -481,7 +562,6 @@ const handleCallAllCandidates = async () => {
           </div>
         </CardContent>
       </Card>
-
       {/* Footer Actions */}
       <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
         <CardContent className="p-4">
@@ -524,6 +604,137 @@ const handleCallAllCandidates = async () => {
       {showFinalSuccess && (
         <div className="fixed bottom-5 right-5 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg animate-slide-up z-50">
           Selected candidates added to <strong>Final Selects</strong>!
+        </div>
+      )}
+      {/* Custom Question Modal */}
+      {showCustomQuestionModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="bg-card border-primary/20 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <CardHeader className="border-b border-primary/10">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-2xl">Add Custom Question</CardTitle>
+                <button
+                  onClick={() => {
+                    setShowCustomQuestionModal(false);
+                    setCustomQuestion('');
+                    setGeneratedOptions([]); // Clear options on close
+                  }}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Add a custom screening question that will be asked to candidates during their calls
+              </p>
+            </CardHeader>
+            
+            <CardContent className="p-6 space-y-6">
+              {/* Generate Question Button Section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-foreground">
+                    Generate AI Question
+                  </label>
+                  <Button
+                    onClick={handleGenerateQuestion}
+                    // Disable if generating OR if already generated once
+                    disabled={isGenerating || hasGeneratedQuestion} 
+                    variant="outline"
+                    className="border-accent/30 hover:bg-accent/10"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin mr-2" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Star className="w-4 h-4 mr-2" />
+                        {/* Updated text for one-time limit */}
+                        {hasGeneratedQuestion ? "Generated (One-Time Limit)" : "Generate Question"} 
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Let AI generate contextual screening questions based on your job requirements (One question limit per search)
+                </p>
+              </div>
+              
+              {/* SECTION: Display Generated Options for Selection */}
+              {generatedOptions.length > 0 && (
+                <div className="space-y-3 p-4 bg-muted/20 border border-primary/10 rounded-lg">
+                  <h4 className="text-sm font-semibold text-foreground">Select a Generated Question:</h4>
+                  <div className="space-y-2">
+                    {generatedOptions.map((question, index) => (
+                      <Button
+                        key={index}
+                        // Highlight the currently selected question
+                        variant={customQuestion === question ? "default" : "outline"}
+                        className={`w-full justify-start whitespace-normal h-auto py-2 text-left ${customQuestion === question ? 'glow-accent' : 'border-primary/30 hover:bg-primary/10'}`}
+                        // Update the main customQuestion state on click
+                        onClick={() => handleSelectGeneratedOption(question)}
+                      >
+                        <span className="font-bold mr-2">{index + 1}.</span> {question}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* END SECTION */}
+
+              {/* Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-primary/20"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-card text-muted-foreground">or type your own</span>
+                </div>
+              </div>
+              
+              {/* Custom Question Input */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-foreground">
+                  Your Custom Question
+                </label>
+                <textarea
+                  value={customQuestion}
+                  onChange={(e) => setCustomQuestion(e.target.value)}
+                  placeholder="E.g., Can you explain your experience with React and state management libraries?"
+                  className="w-full h-32 bg-background border border-primary/30 rounded-lg px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                />
+                <p className="text-xs text-muted-foreground">
+                  This question will be added to the standard screening questions for all candidates (You can edit the selected question above or type a new one here)
+                </p>
+              </div>
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-primary/10">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowCustomQuestionModal(false);
+                    setCustomQuestion('');
+                    setGeneratedOptions([]); // Clear options on cancel
+                  }}
+                  className="border-primary/30 hover:bg-primary/10"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSaveCustomQuestion}
+                  disabled={!customQuestion.trim()}
+                  className="bg-accent hover:bg-accent/90 glow-accent"
+                >
+                  <CheckSquare className="w-4 h-4 mr-2" />
+                  Save Question
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>
