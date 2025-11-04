@@ -8,10 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-// IMPORTANT: You must import your actual toast utility here
-// e.g., import { toast } from '@/components/ui/use-toast'; 
-// or define a placeholder if your setup is external. 
-// For this code, I will use a simple console.log based placeholder:
+
 const toast = {
     success: (message) => console.log(`TOAST SUCCESS: ${message}`),
     error: (message) => console.error(`TOAST ERROR: ${message}`),
@@ -22,7 +19,7 @@ const Results = () => {
   const { searchId } = useParams();
   const navigate = useNavigate();
   const [candidates, setCandidates] = useState([]);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState('all'); 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCandidates, setSelectedCandidates] = useState([]);
   const [sortBy, setSortBy] = useState('match_score');
@@ -68,6 +65,49 @@ const Results = () => {
     if (searchId) fetchCandidates();
   }, [searchId]);
 
+  // Calculate filtered candidates based on current filter and search
+  const filteredCandidates = candidates
+    .filter(candidate => {
+      const matchesSearch =
+        candidate.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        candidate.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        candidate.skills.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      if (!matchesSearch) return false;
+
+      switch (filter) {
+        case 'liked':
+          return candidate.liked;
+        case 'high-match':
+          return candidate.match_score >= 90;
+        case 'Called & Answered': 
+          return candidate.call_status === 'Called & Answered';
+        case 'Re-schedule': 
+          return candidate.call_status === 'Re-schedule';
+        case 'not_called': 
+          return candidate.call_status === 'not_called';
+        case 'all':
+        default:
+          return true;
+      }
+    })
+    .sort((a, b) => {
+      if (sortBy === 'match_score') return b.match_score - a.match_score;
+      if (sortBy === 'name') return a.name.localeCompare(b.name);
+      if (sortBy === 'call_status') return a.call_status.localeCompare(b.call_status);
+      return 0;
+    });
+
+  // Get currently selected candidates that are also in the filtered list
+  const getSelectedFilteredCandidates = () => {
+    return filteredCandidates.filter(c => selectedCandidates.includes(c.id));
+  };
+
+  // Clear selections when filter changes to avoid confusion
+  useEffect(() => {
+    setSelectedCandidates([]);
+  }, [filter, searchTerm]);
+
   const handleCandidateSelect = (candidateId) => {
     setSelectedCandidates(prev =>
       prev.includes(candidateId) ? prev.filter(id => id !== candidateId) : [...prev, candidateId]
@@ -75,10 +115,24 @@ const Results = () => {
   };
 
   const handleSelectAll = () => {
-    if (selectedCandidates.length === candidates.length) {
-      setSelectedCandidates([]);
+    const filteredIds = filteredCandidates.map(c => c.id);
+    const allFilteredSelected = filteredIds.length > 0 && 
+                                filteredIds.every(id => selectedCandidates.includes(id));
+    
+    if (allFilteredSelected) {
+      // Deselect all filtered candidates
+      setSelectedCandidates(prev => prev.filter(id => !filteredIds.includes(id)));
     } else {
-      setSelectedCandidates(candidates.map(c => c.id));
+      // Select all filtered candidates (merge with existing selections)
+      setSelectedCandidates(prev => {
+        const newSelections = [...prev];
+        filteredIds.forEach(id => {
+          if (!newSelections.includes(id)) {
+            newSelections.push(id);
+          }
+        });
+        return newSelections;
+      });
     }
   };
 
@@ -101,9 +155,17 @@ const Results = () => {
   };
 
   const handleAddToFinalSelects = async () => {
+    // Only add candidates that are both selected AND in the filtered list
+    const selectedFiltered = getSelectedFilteredCandidates();
+    
+    if (selectedFiltered.length === 0) {
+      toast.warning("No candidates selected from the current filtered view.");
+      return;
+    }
+
     try {
       await axios.post(`${import.meta.env.VITE_API_URL}/api/add-final-select`, {
-        candidate_ids: selectedCandidates
+        candidate_ids: selectedFiltered.map(c => c.id)
       },{headers: {
           "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
           "Content-Type": "application/json",
@@ -112,7 +174,10 @@ const Results = () => {
       setTimeout(() => {
         setShowFinalSuccess(false);
       }, 3000);
-      toast.success("Candidates added to Final Selects.");
+      toast.success(`${selectedFiltered.length} candidates added to Final Selects.`);
+      
+      // Clear selections after successful addition
+      setSelectedCandidates([]);
     } catch (error) {
       console.error("Failed to add to final selects:", error);
       toast.error("Failed to add candidates to final selects.");
@@ -200,106 +265,106 @@ const Results = () => {
   };
 
   const handleCallCandidate = async (candidate) => {
-  try {
-    await axios.post(`${import.meta.env.VITE_API_URL}/api/call-single`, {
-      search_id: searchId,
-      name: candidate.name,
-      phone: candidate.phone,
-      skills: candidate.skills,
-      company: candidate.company || '',
-      candidate_id: candidate.id,
-    },{headers: {
-          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-          "Content-Type": "application/json",
-        }}, );
-    setCallSuccessName(candidate.name);
-    setShowCallSuccess(true);
-    setTimeout(() => {
-      setShowCallSuccess(false);
-    }, 3000);
-    toast.success(`Call initiated for ${candidate.name}.`);
-  } catch (error) {
-    console.error("Failed to call candidate", error);
-    toast.error("Failed to initiate call for candidate.");
-  }
-};
+    try {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/call-single`, {
+        search_id: searchId,
+        name: candidate.name,
+        phone: candidate.phone,
+        skills: candidate.skills,
+        company: candidate.company || '',
+        candidate_id: candidate.id,
+      },{headers: {
+            "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+            "Content-Type": "application/json",
+          }}, );
+      setCallSuccessName(candidate.name);
+      setShowCallSuccess(true);
+      setTimeout(() => {
+        setShowCallSuccess(false);
+      }, 3000);
+      toast.success(`Call initiated for ${candidate.name}.`);
+    } catch (error) {
+      console.error("Failed to call candidate", error);
+      toast.error("Failed to initiate call for candidate.");
+    }
+  };
 
-const handleCallSelectedCandidates = async () => {
-  try {
-    const selected = candidates.filter(c => selectedCandidates.includes(c.id));
-    const payload = selected.map(c => ({
-      name: c.name,
-      phone: c.phone,
-      skills: c.skills,
-      company: c.company || '',
-      candidate_id: c.id
-    }));
-    await axios.post(`${import.meta.env.VITE_API_URL}/api/call`, {
-      search_id: searchId,
-      candidates: payload
-    },{headers: {
-          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-          "Content-Type": "application/json",
-        },});
+  const handleCallSelectedCandidates = async () => {
+    // Only call candidates that are both selected AND in the filtered list
+    const selectedFiltered = getSelectedFilteredCandidates();
     
-    setShowCallSuccess(true);
-    setTimeout(() => {
-      setShowCallSuccess(false);
-    }, 3000);
-    toast.success(`${selectedCandidates.length} calls initiated successfully.`);
-  } catch (error) {
-    console.error("Failed to call selected candidates", error);
-    toast.error("Failed to initiate calls for selected candidates.");
-  }
-};
+    if (selectedFiltered.length === 0) {
+      toast.warning("No candidates selected from the current filtered view.");
+      return;
+    }
 
-const handleCallAllCandidates = async () => {
-  try {
-    const payload = candidates.map(c => ({
-      name: c.name,
-      phone: c.phone,
-      skills: c.skills,
-      company: c.company || '',
-      candidate_id: c.id
-    }));
-    await axios.post(`${import.meta.env.VITE_API_URL}/api/call`, {
-      search_id: searchId,
-      candidates: payload
-    },{headers: {
-          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-          "Content-Type": "application/json",
-        },});
-    toast.success(`Calls initiated for all ${candidates.length} candidates.`);
-  } catch (error) {
-    console.error("Failed to call all candidates", error);
-    toast.error("Failed to initiate calls for all candidates.");
-  }
-};
+    try {
+      const payload = selectedFiltered.map(c => ({
+        name: c.name,
+        phone: c.phone,
+        skills: c.skills,
+        company: c.company || '',
+        candidate_id: c.id
+      }));
+      
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/call`, {
+        search_id: searchId,
+        candidates: payload
+      },{headers: {
+            "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+            "Content-Type": "application/json",
+          },});
+      
+      setShowCallSuccess(true);
+      setTimeout(() => {
+        setShowCallSuccess(false);
+      }, 3000);
+      toast.success(`${selectedFiltered.length} calls initiated successfully.`);
+      
+      // Clear selections after successful call
+      setSelectedCandidates([]);
+    } catch (error) {
+      console.error("Failed to call selected candidates", error);
+      toast.error("Failed to initiate calls for selected candidates.");
+    }
+  };
 
-  const filteredCandidates = candidates
-    .filter(candidate => {
-      const matchesSearch =
-        candidate.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        candidate.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        candidate.skills.toLowerCase().includes(searchTerm.toLowerCase());
-      if (filter === 'liked') return candidate.liked && matchesSearch;
-      if (filter === 'completed') return candidate.call_status === 'completed' && matchesSearch;
-      if (filter === 'high-match') return candidate.match_score >= 90 && matchesSearch;
-      return matchesSearch;
-    })
-    .sort((a, b) => {
-      if (sortBy === 'match_score') return b.match_score - a.match_score;
-      if (sortBy === 'name') return a.name.localeCompare(b.name);
-      if (sortBy === 'call_status') return a.call_status.localeCompare(b.call_status);
-      return 0;
-    });
+  const handleCallAllCandidates = async () => {
+    if (filteredCandidates.length === 0) {
+      toast.warning("No candidates in the current filtered view.");
+      return;
+    }
+
+    try {
+      const payload = filteredCandidates.map(c => ({
+        name: c.name,
+        phone: c.phone,
+        skills: c.skills,
+        company: c.company || '',
+        candidate_id: c.id
+      }));
+      
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/call`, {
+        search_id: searchId,
+        candidates: payload
+      },{headers: {
+            "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+            "Content-Type": "application/json",
+          },});
+      toast.success(`Calls initiated for all ${filteredCandidates.length} filtered candidates.`);
+    } catch (error) {
+      console.error("Failed to call all candidates", error);
+      toast.error("Failed to initiate calls for all candidates.");
+    }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'completed': return 'text-green-400 bg-green-400/20';
+      case 'Called & Answered': return 'text-green-400 bg-green-400/20';
+      case 'Re-schedule': return 'text-yellow-400 bg-yellow-400/20';
       case 'scheduled': return 'text-blue-400 bg-blue-400/20';
-      case 'rescheduled': return 'text-yellow-400 bg-yellow-400/20';
       case 'failed': return 'text-red-400 bg-red-400/20';
+      case 'not_called': 
       default: return 'text-gray-400 bg-gray-400/20';
     }
   };
@@ -318,11 +383,9 @@ const handleCallAllCandidates = async () => {
     );
   }
 
-  // Empty state when no candidates are found
   if (candidates.length === 0) {
     return (
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Search Results</h1>
@@ -335,7 +398,6 @@ const handleCallAllCandidates = async () => {
             </Button>
           </div>
         </div>
-        {/* Stats showing zeros */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[
             { label: "Shortlisted Count", value: 0, icon: <CheckSquare />, color: "primary" },
@@ -356,7 +418,6 @@ const handleCallAllCandidates = async () => {
             </Card>
           ))}
         </div>
-        {/* Empty state message */}
         <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
           <CardContent className="p-12">
             <div className="text-center space-y-6">
@@ -376,13 +437,20 @@ const handleCallAllCandidates = async () => {
     );
   }
 
+  // Calculate how many selected candidates are in the current filtered view
+  const selectedFilteredCount = getSelectedFilteredCandidates().length;
+  const allFilteredSelected = filteredCandidates.length > 0 && 
+                              filteredCandidates.every(c => selectedCandidates.includes(c.id));
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Search Results</h1>
-          <p className="text-muted-foreground">Found {candidates.length} candidates for search #{searchId}</p>
+          <p className="text-muted-foreground">
+            Found {candidates.length} candidates for search #{searchId}
+            {filter !== 'all' && ` (${filteredCandidates.length} filtered)`}
+          </p>
         </div>
         <div className="flex items-center space-x-3">
           <Button onClick={handleAddCustomQuestion} className="bg-accent hover:bg-accent/90 text-white glow-accent">
@@ -398,7 +466,7 @@ const handleCallAllCandidates = async () => {
           </Button>
         </div>
       </div>
-      {/* Stats */}
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
           { label: "Shortlisted Count", value: stats.shortlisted, icon: <CheckSquare />, color: "primary" },
@@ -419,7 +487,7 @@ const handleCallAllCandidates = async () => {
           </Card>
         ))}
       </div>
-      {/* Filters */}
+
       <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
@@ -433,8 +501,10 @@ const handleCallAllCandidates = async () => {
                 >
                   <option value="all">All Candidates</option>
                   <option value="liked">Liked Only</option>
-                  <option value="completed">Calls Completed</option>
                   <option value="high-match">High Match (90+)</option>
+                  <option value="Called & Answered">Called & Answered</option>
+                  <option value="not_called">Not Called</option>
+                  <option value="Re-schedule">Re-schedule</option>
                 </select>
               </div>
               <div className="flex items-center space-x-2">
@@ -462,19 +532,21 @@ const handleCallAllCandidates = async () => {
           </div>
         </CardContent>
       </Card>
-      {/* Table */}
+
       <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Candidate Results</span>
+            <span>Candidate Results ({filteredCandidates.length})</span>
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
-                checked={selectedCandidates.length === candidates.length}
+                checked={allFilteredSelected}
                 onChange={handleSelectAll}
                 className="w-4 h-4"
               />
-              <span className="text-sm text-muted-foreground">Select All</span>
+              <span className="text-sm text-muted-foreground">
+                Select All {filter !== 'all' ? '(Filtered)' : ''}
+              </span>
             </div>
           </CardTitle>
         </CardHeader>
@@ -562,33 +634,33 @@ const handleCallAllCandidates = async () => {
           </div>
         </CardContent>
       </Card>
-      {/* Footer Actions */}
+
       <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
         <CardContent className="p-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-3">
               <Button className="bg-primary hover:bg-primary/90" onClick={handleCallAllCandidates}>
                 <Phone className="w-4 h-4 mr-2" />
-                Call All
+                Call All {filter !== 'all' ? 'Filtered' : ''} ({filteredCandidates.length})
               </Button>
               <Button
-                disabled={selectedCandidates.length === 0}
+                disabled={selectedFilteredCount === 0}
                 variant="outline"
                 className="border-primary/30 hover:bg-primary/10"
                 onClick={handleCallSelectedCandidates}
               >
                 <Phone className="w-4 h-4 mr-2" />
-                Call Selected ({selectedCandidates.length})
+                Call Selected ({selectedFilteredCount})
               </Button>
             </div>
             <div className="flex items-center space-x-3">
               <Button
                 onClick={handleAddToFinalSelects}
-                disabled={selectedCandidates.length === 0}
+                disabled={selectedFilteredCount === 0}
                 className="bg-accent hover:bg-accent/90 glow-accent"
               >
                 <UserCheck className="w-4 h-4 mr-2" />
-                Add to Final Selects
+                Add to Final Selects ({selectedFilteredCount})
               </Button>
             </div>
           </div>
@@ -597,7 +669,7 @@ const handleCallAllCandidates = async () => {
       
       {showCallSuccess && (
         <div className="fixed bottom-5 right-5 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg animate-slide-up z-50">
-          Call to <strong>{callSuccessName}</strong> initiated successfully!
+          {callSuccessName ? `Call to ${callSuccessName} initiated successfully!` : 'Calls initiated successfully!'}
         </div>
       )}
       
@@ -606,7 +678,7 @@ const handleCallAllCandidates = async () => {
           Selected candidates added to <strong>Final Selects</strong>!
         </div>
       )}
-      {/* Custom Question Modal */}
+
       {showCustomQuestionModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <Card className="bg-card border-primary/20 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -617,7 +689,7 @@ const handleCallAllCandidates = async () => {
                   onClick={() => {
                     setShowCustomQuestionModal(false);
                     setCustomQuestion('');
-                    setGeneratedOptions([]); // Clear options on close
+                    setGeneratedOptions([]);
                   }}
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
@@ -632,7 +704,6 @@ const handleCallAllCandidates = async () => {
             </CardHeader>
             
             <CardContent className="p-6 space-y-6">
-              {/* Generate Question Button Section */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium text-foreground">
@@ -640,7 +711,6 @@ const handleCallAllCandidates = async () => {
                   </label>
                   <Button
                     onClick={handleGenerateQuestion}
-                    // Disable if generating OR if already generated once
                     disabled={isGenerating || hasGeneratedQuestion} 
                     variant="outline"
                     className="border-accent/30 hover:bg-accent/10"
@@ -653,7 +723,6 @@ const handleCallAllCandidates = async () => {
                     ) : (
                       <>
                         <Star className="w-4 h-4 mr-2" />
-                        {/* Updated text for one-time limit */}
                         {hasGeneratedQuestion ? "Generated (One-Time Limit)" : "Generate Question"} 
                       </>
                     )}
@@ -664,7 +733,6 @@ const handleCallAllCandidates = async () => {
                 </p>
               </div>
               
-              {/* SECTION: Display Generated Options for Selection */}
               {generatedOptions.length > 0 && (
                 <div className="space-y-3 p-4 bg-muted/20 border border-primary/10 rounded-lg">
                   <h4 className="text-sm font-semibold text-foreground">Select a Generated Question:</h4>
@@ -672,10 +740,8 @@ const handleCallAllCandidates = async () => {
                     {generatedOptions.map((question, index) => (
                       <Button
                         key={index}
-                        // Highlight the currently selected question
                         variant={customQuestion === question ? "default" : "outline"}
                         className={`w-full justify-start whitespace-normal h-auto py-2 text-left ${customQuestion === question ? 'glow-accent' : 'border-primary/30 hover:bg-primary/10'}`}
-                        // Update the main customQuestion state on click
                         onClick={() => handleSelectGeneratedOption(question)}
                       >
                         <span className="font-bold mr-2">{index + 1}.</span> {question}
@@ -684,9 +750,7 @@ const handleCallAllCandidates = async () => {
                   </div>
                 </div>
               )}
-              {/* END SECTION */}
 
-              {/* Divider */}
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-primary/20"></div>
@@ -696,7 +760,6 @@ const handleCallAllCandidates = async () => {
                 </div>
               </div>
               
-              {/* Custom Question Input */}
               <div className="space-y-3">
                 <label className="text-sm font-medium text-foreground">
                   Your Custom Question
@@ -711,14 +774,14 @@ const handleCallAllCandidates = async () => {
                   This question will be added to the standard screening questions for all candidates (You can edit the selected question above or type a new one here)
                 </p>
               </div>
-              {/* Action Buttons */}
+
               <div className="flex items-center justify-end space-x-3 pt-4 border-t border-primary/10">
                 <Button
                   variant="outline"
                   onClick={() => {
                     setShowCustomQuestionModal(false);
                     setCustomQuestion('');
-                    setGeneratedOptions([]); // Clear options on cancel
+                    setGeneratedOptions([]);
                   }}
                   className="border-primary/30 hover:bg-primary/10"
                 >
