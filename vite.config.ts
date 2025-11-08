@@ -1,7 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -11,19 +10,16 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger(),
-  ].filter(Boolean),
+    // Removed componentTagger() as it caused module not found issues
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Add build configuration
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    // Ensure public files (including _redirects) are copied
     rollupOptions: {
       output: {
         manualChunks: {
@@ -33,6 +29,5 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
-  // Ensure public directory files are copied to dist
   publicDir: 'public',
 }));

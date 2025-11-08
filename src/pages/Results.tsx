@@ -582,9 +582,7 @@ const Results = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-gradient-to-r from-primary to-accent rounded-full flex items-center justify-center text-white text-sm font-bold">
-                          {candidate.name.split(' ').map(n => n[0]).join('')}
-                        </div>
+
                         <div>
                           <p className="font-medium">{candidate.name}</p>
                           <p className="text-xs text-muted-foreground">{candidate.skills}</p>
