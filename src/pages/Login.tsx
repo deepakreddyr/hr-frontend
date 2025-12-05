@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
+import ShinyText from "../components/ShinyText";
+;
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -65,12 +66,23 @@ const Login = () => {
           {/* <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center mx-auto mb-4 glow-primary animate-float">
             <Search className="w-8 h-8 text-white" />
           </div> */}
-          <h1 className="text-3xl font-bold text-foreground mb-2">TheHireAI</h1>
-          <p className="text-muted-foreground">AI-Powered HR Recruitment Platform</p>
+          <ShinyText 
+            text="TheHireAI" 
+            disabled={false} 
+            speed={3} 
+            className='text-4xl font-bold' 
+          />
+          
+          <p className="text-muted-foreground"><ShinyText 
+            text="AI-Powered HR Recruitment Platform" 
+            disabled={false} 
+            speed={3} 
+            className='mt-5' 
+          /></p>
         </div>
 
         {/* Login Form */}
-        <div className="bg-card border border-border rounded-xl p-8 shadow-2xl">
+        <div className="bg-card border border-primary/40 rounded-xl p-8 shadow-2xl glow-primary">
           <h2 className="text-2xl font-bold text-foreground mb-6 text-center">Welcome Back</h2>
           
           {/* Error Message */}

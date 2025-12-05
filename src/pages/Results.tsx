@@ -36,19 +36,26 @@ const Results = () => {
   const [showCustomQuestionModal, setShowCustomQuestionModal] = useState(false);
   const [customQuestion, setCustomQuestion] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [hasGeneratedQuestion, setHasGeneratedQuestion] = useState(false);
   const [generatedOptions, setGeneratedOptions] = useState([]); 
+  const [savedCustomQuestion, setSavedCustomQuestion] = useState(''); 
 
   useEffect(() => {
-    const fetchCandidates = async () => {
+    const fetchSearchData = async () => {
+      setLoading(true);
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        toast.error("Authentication error. Please log in again.");
+        // Consider redirecting to login here if necessary
+        return;
+      }
+      const headers = {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+      
       try {
-        const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/results?searchID=${searchId}`, {
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-          "Content-Type": "application/json",
-        },
-      });
-        console.log(res);
+        // 1. Fetch Candidates
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/results?searchID=${searchId}`, { headers });
         setCandidates(res.data.candidates || []);
         setStats({
           shortlisted: res.data.total,
@@ -56,13 +63,20 @@ const Results = () => {
           rescheduled: res.data.rescheduled_calls,
           total: res.data.total
         });
+        
+        // 2. Fetch Saved Custom Question (using the updated combined GET endpoint)
+        const questionRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/custom-question?search_id=${searchId}`, { headers });
+        if (questionRes.data.success) {
+          setSavedCustomQuestion(questionRes.data.custom_question || '');
+        }
+
       } catch (error) {
-        console.error("Error fetching candidates:", error);
+        console.error("Error fetching search data:", error);
       } finally {
         setLoading(false);
       }
     };
-    if (searchId) fetchCandidates();
+    if (searchId) fetchSearchData();
   }, [searchId]);
 
   // Calculate filtered candidates based on current filter and search
@@ -185,6 +199,9 @@ const Results = () => {
   };
 
   const handleAddCustomQuestion = () => {
+    // Initialize the modal's question state with the currently saved question
+    setCustomQuestion(savedCustomQuestion); 
+    setGeneratedOptions([]); // Clear generated options on open
     setShowCustomQuestionModal(true);
   };
 
@@ -193,15 +210,11 @@ const Results = () => {
   };
 
   const handleGenerateQuestion = async () => {
-    if (hasGeneratedQuestion) {
-      toast.warning("AI question has already been generated for this search.");
-      return;
-    }
-    
     setIsGenerating(true);
     try {
       const token = localStorage.getItem("access_token");
 
+      // Note: This endpoint is separate from /api/custom-question
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/get-questions?search_id=${searchId}`, {
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -211,9 +224,11 @@ const Results = () => {
       
       if (res.data.success && res.data.questions && res.data.questions.length > 0) {
         setGeneratedOptions(res.data.questions); 
-        setCustomQuestion(res.data.questions[0]);
-        setHasGeneratedQuestion(true); 
-        toast.success("AI questions generated successfully. Please select one.");
+        // Auto-select the first generated question only if the textarea is currently empty
+        if (!customQuestion.trim()) {
+            setCustomQuestion(res.data.questions[0]);
+        }
+        toast.success("AI questions generated successfully. Please select one or edit the text box.");
       } else {
         toast.error("AI failed to generate questions. Please try again or enter a custom one.");
       }
@@ -238,6 +253,7 @@ const Results = () => {
     }
 
     try {
+      // Use the updated combined endpoint for POST
       await axios.post(`${import.meta.env.VITE_API_URL}/api/custom-question`, {
         search_id: searchId,
         question: customQuestion
@@ -249,10 +265,10 @@ const Results = () => {
       });
       
       toast.success("Custom question saved successfully!");
+      setSavedCustomQuestion(customQuestion); // Update the saved state
       setShowCustomQuestionModal(false);
-      setCustomQuestion('');
+      setCustomQuestion(''); // Clear modal state
       setGeneratedOptions([]); 
-      setHasGeneratedQuestion(true); 
 
     } catch (error) {
       console.error("Failed to save custom question", error.response?.data || error.message);
@@ -263,6 +279,59 @@ const Results = () => {
   const handleViewFinalSelects = () => {
     navigate('/final-selects');
   };
+
+  // UPDATED FUNCTION: Handle candidate data export (Client-side CSV generation)
+  const handleExportCandidates = () => {
+    if (filteredCandidates.length === 0) {
+        toast.warning("No candidates in the current filtered view to export.");
+        return;
+    }
+
+    try {
+        const headers = [
+            "Name", "Email", "Phone", "Total Exp", "Relevant Exp", "Match Score (%)", "Call Status", "Liked", "Skills"
+        ];
+        
+        // Map candidate data to CSV rows
+        const csvRows = filteredCandidates.map(c => [
+            // Ensure data is wrapped in quotes if it might contain commas or newlines
+            `"${c.name.replace(/"/g, '""')}"`, 
+            `"${c.email.replace(/"/g, '""')}"`, 
+            `"${c.phone.replace(/"/g, '""')}"`, 
+            c.totalExp,
+            c.relevantExp,
+            c.match_score,
+            `"${c.call_status.replace(/"/g, '""')}"`,
+            c.liked ? 'Yes' : 'No',
+            `"${c.skills.replace(/"/g, '""')}"`
+        ].join(','));
+
+        // Combine headers and rows
+        const csvString = [
+            headers.join(','),
+            ...csvRows
+        ].join('\n');
+
+        // Create Blob and trigger download
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `Search_${searchId}_Candidates_Export.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+
+        toast.success(`Exported ${filteredCandidates.length} candidates to CSV.`);
+
+    } catch (error) {
+        console.error("Export failed:", error);
+        toast.error("Failed to export candidate data.");
+    }
+  };
+
 
   const handleCallCandidate = async (candidate) => {
     try {
@@ -454,13 +523,17 @@ const Results = () => {
         </div>
         <div className="flex items-center space-x-3">
           <Button onClick={handleAddCustomQuestion} className="bg-accent hover:bg-accent/90 text-white glow-accent">
-            Add Custom Question            
+            {savedCustomQuestion ? 'Edit Custom Question' : 'Add Custom Question'}            
           </Button>
           <Button onClick={handleViewFinalSelects} className="bg-accent hover:bg-accent/90 text-white glow-accent">
             <UserCheck className="w-4 h-4 mr-2" />
             View Final Selects
           </Button>
-          <Button variant="outline" className="border-primary/30 hover:bg-primary/10">
+          <Button 
+            onClick={handleExportCandidates} // Uses the new CSV export function
+            variant="outline" 
+            className="border-primary/30 hover:bg-primary/10"
+          >
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
@@ -697,19 +770,32 @@ const Results = () => {
                 </button>
               </div>
               <p className="text-sm text-muted-foreground mt-2">
-                Add a custom screening question that will be asked to candidates during their calls
+                Add a custom screening question that will be asked to candidates during their calls.
               </p>
             </CardHeader>
             
             <CardContent className="p-6 space-y-6">
+              {/* DISPLAY CURRENTLY SAVED QUESTION */}
+              {savedCustomQuestion && (
+                <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg space-y-2">
+                  <h4 className="text-sm font-semibold text-green-400">
+                    <CheckSquare className="w-4 h-4 inline mr-2"/>Currently Saved Question:
+                  </h4>
+                  <p className="text-sm text-foreground italic break-words">"{savedCustomQuestion}"</p>
+                  <p className="text-xs text-muted-foreground">
+                    Saving a new question below will overwrite this one.
+                  </p>
+                </div>
+              )}
+
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium text-foreground">
-                    Generate AI Question
+                    Generate AI Question Options
                   </label>
                   <Button
                     onClick={handleGenerateQuestion}
-                    disabled={isGenerating || hasGeneratedQuestion} 
+                    disabled={isGenerating} 
                     variant="outline"
                     className="border-accent/30 hover:bg-accent/10"
                   >
@@ -721,19 +807,19 @@ const Results = () => {
                     ) : (
                       <>
                         <Star className="w-4 h-4 mr-2" />
-                        {hasGeneratedQuestion ? "Generated (One-Time Limit)" : "Generate Question"} 
+                        Generate New Questions
                       </>
                     )}
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Let AI generate contextual screening questions based on your job requirements (One question limit per search)
+                  Let AI generate contextual screening questions based on your job requirements (Can be re-generated).
                 </p>
               </div>
               
               {generatedOptions.length > 0 && (
                 <div className="space-y-3 p-4 bg-muted/20 border border-primary/10 rounded-lg">
-                  <h4 className="text-sm font-semibold text-foreground">Select a Generated Question:</h4>
+                  <h4 className="text-sm font-semibold text-foreground">Select a Generated Question to use/edit:</h4>
                   <div className="space-y-2">
                     {generatedOptions.map((question, index) => (
                       <Button
@@ -760,7 +846,7 @@ const Results = () => {
               
               <div className="space-y-3">
                 <label className="text-sm font-medium text-foreground">
-                  Your Custom Question
+                  Question to Save (This will be saved to the database)
                 </label>
                 <textarea
                   value={customQuestion}
@@ -769,7 +855,7 @@ const Results = () => {
                   className="w-full h-32 bg-background border border-primary/30 rounded-lg px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
                 />
                 <p className="text-xs text-muted-foreground">
-                  This question will be added to the standard screening questions for all candidates (You can edit the selected question above or type a new one here)
+                  This question will be added to the standard screening questions for all candidates.
                 </p>
               </div>
 

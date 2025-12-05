@@ -96,14 +96,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div ref={btnContainerRef} className="flex items-center absolute right-12">
           <button
             onClick={() => handleButtonClick("/simple-shortlist")}
-            className="bg-blue-500 hover:bg-blue-600 transition-colors duration-200
+            className="bg-purple-500 hover:bg-purple-600 transition-colors duration-200
                        text-white text-sm w-24 h-10 shadow-lg rounded-2xl opacity-0"
           >
             S Search
           </button>
           <button
             onClick={() => handleButtonClick("/shortlist")}
-            className="bg-blue-500 hover:bg-blue-600 transition-colors duration-200
+            className="bg-purple-500 hover:bg-purple-600 transition-colors duration-200
                        text-white text-sm w-24 h-10 shadow-lg rounded-2xl opacity-0 ml-2"
           >
             N Search
@@ -114,7 +114,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <button
           onClick={toggleMenu}
           className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300
-            ${expanded ? "bg-gray-700/70 rotate-45" : "bg-blue-500 hover:bg-blue-600"} text-white`}
+            ${expanded ? "bg-gray-700/70 rotate-45" : "bg-purple-500 hover:bg-purple-600"} text-white`}
         >
           {expanded ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
         </button>
