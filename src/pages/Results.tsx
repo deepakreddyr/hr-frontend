@@ -2,26 +2,48 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
-  Phone, Heart, UserCheck, Star, Filter, Download, SortAsc, Search, CheckSquare, Trash2, Users
+  Phone, Heart, UserCheck, Star, Filter, Download, SortAsc, Search, CheckSquare, Users, Plus, Edit3, Trash2, AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import CandidateFormModal from '@/components/CandidateFormModal'; 
 
 const toast = {
-    success: (message) => console.log(`TOAST SUCCESS: ${message}`),
-    error: (message) => console.error(`TOAST ERROR: ${message}`),
-    warning: (message) => console.warn(`TOAST WARNING: ${message}`),
+    success: (message: string) => console.log(`TOAST SUCCESS: ${message}`),
+    error: (message: string) => console.error(`TOAST ERROR: ${message}`),
+    warning: (message: string) => console.warn(`TOAST WARNING: ${message}`),
 };
 
-const Results = () => {
-  const { searchId } = useParams();
+interface Candidate {
+  id: number;
+  search_id: number;
+  user_id: number;
+  liked: boolean;
+  hiring_status: boolean;
+  join_status: boolean;
+  created_at?: string;
+  updated_at?: string;
+  name: string;
+  email: string;
+  phone: string;
+  skills: string;
+  total_experience: string;
+  relevant_work_experience: string;
+  match_score: number;
+  summary: string;
+  call_status: string;
+  company?: string; 
+}
+
+const Results: React.FC = () => {
+  const { searchId } = useParams<{ searchId: string }>();
   const navigate = useNavigate();
-  const [candidates, setCandidates] = useState([]);
+  const [candidates, setCandidates] = useState<Candidate[]>([]); 
   const [filter, setFilter] = useState('all'); 
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCandidates, setSelectedCandidates] = useState([]);
+  const [selectedCandidates, setSelectedCandidates] = useState<number[]>([]); 
   const [sortBy, setSortBy] = useState('match_score');
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -36,8 +58,114 @@ const Results = () => {
   const [showCustomQuestionModal, setShowCustomQuestionModal] = useState(false);
   const [customQuestion, setCustomQuestion] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedOptions, setGeneratedOptions] = useState([]); 
+  const [generatedOptions, setGeneratedOptions] = useState<string[]>([]); 
   const [savedCustomQuestion, setSavedCustomQuestion] = useState(''); 
+  
+  // State for CandidateFormModal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [candidateToEditId, setCandidateToEditId] = useState<number | null>(null);
+
+  // Delete Confirmation Modal State
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    show: boolean;
+    candidateId: number | null;
+    candidateName: string;
+  }>({
+    show: false,
+    candidateId: null,
+    candidateName: ''
+  });
+
+  // --- MODAL HANDLERS ---
+  const handleOpenAddModal = () => {
+    setCandidateToEditId(null); 
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (candidateId: number) => {
+    setCandidateToEditId(candidateId); 
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setCandidateToEditId(null);
+  };
+
+  const handleCandidateSuccess = (newOrUpdatedCandidate: Candidate) => {
+    setCandidates(prev => {
+      const existingIndex = prev.findIndex(c => c.id === newOrUpdatedCandidate.id);
+      
+      if (existingIndex !== -1) {
+        // Update existing candidate
+        return prev.map((c, index) => 
+          index === existingIndex ? newOrUpdatedCandidate : c
+        );
+      } else {
+        // Add new candidate
+        return [newOrUpdatedCandidate, ...prev];
+      }
+    });
+
+    // Update stats when adding new candidate
+    if (!candidates.find(c => c.id === newOrUpdatedCandidate.id)) {
+      setStats(prev => ({
+        ...prev,
+        total: prev.total + 1,
+        shortlisted: prev.shortlisted + 1
+      }));
+    }
+  };
+
+  // --- DELETE HANDLERS WITH CONFIRMATION ---
+  const handleDeleteClick = (candidateId: number, candidateName: string) => {
+    setDeleteConfirmation({
+      show: true,
+      candidateId,
+      candidateName
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    const { candidateId, candidateName } = deleteConfirmation;
+    
+    if (!candidateId) return;
+
+    try {
+        const token = localStorage.getItem("access_token");
+        await axios.delete(`${import.meta.env.VITE_API_URL}/api/candidate`, {
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            data: { 
+                candidate_id: candidateId 
+            }
+        });
+
+        toast.success(`Candidate ${candidateName} deleted successfully.`);
+        
+        // Remove the candidate from the local state
+        setCandidates(prev => prev.filter(c => c.id !== candidateId));
+        
+        // Update stats 
+        setStats(prev => ({
+            ...prev,
+            total: prev.total > 0 ? prev.total - 1 : 0,
+            shortlisted: prev.shortlisted > 0 ? prev.shortlisted - 1 : 0
+        }));
+
+    } catch (error: any) {
+        console.error("Failed to delete candidate:", error);
+        toast.error(`Failed to delete candidate: ${error.response?.data?.error || "Server error"}`);
+    } finally {
+        setDeleteConfirmation({ show: false, candidateId: null, candidateName: '' });
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmation({ show: false, candidateId: null, candidateName: '' });
+  };
 
   useEffect(() => {
     const fetchSearchData = async () => {
@@ -45,7 +173,6 @@ const Results = () => {
       const token = localStorage.getItem("access_token");
       if (!token) {
         toast.error("Authentication error. Please log in again.");
-        // Consider redirecting to login here if necessary
         return;
       }
       const headers = {
@@ -56,7 +183,16 @@ const Results = () => {
       try {
         // 1. Fetch Candidates
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/results?searchID=${searchId}`, { headers });
-        setCandidates(res.data.candidates || []);
+        
+        const fetchedCandidates: Candidate[] = (res.data.candidates || []).map((c: any) => ({
+             ...c,
+             match_score: parseFloat(c.match_score) || 0,
+             // Ensure experience fields are strings
+             total_experience: c.totalExp ? String(c.totalExp) : '',
+             relevant_work_experience: c.relevantExp ? String(c.relevantExp) : '',
+        }));
+        
+        setCandidates(fetchedCandidates);
         setStats({
           shortlisted: res.data.total,
           callsScheduled: res.data.calls_scheduled,
@@ -64,7 +200,7 @@ const Results = () => {
           total: res.data.total
         });
         
-        // 2. Fetch Saved Custom Question (using the updated combined GET endpoint)
+        // 2. Fetch Saved Custom Question 
         const questionRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/custom-question?search_id=${searchId}`, { headers });
         if (questionRes.data.success) {
           setSavedCustomQuestion(questionRes.data.custom_question || '');
@@ -72,6 +208,7 @@ const Results = () => {
 
       } catch (error) {
         console.error("Error fetching search data:", error);
+        toast.error("Failed to fetch candidate data.");
       } finally {
         setLoading(false);
       }
@@ -122,7 +259,7 @@ const Results = () => {
     setSelectedCandidates([]);
   }, [filter, searchTerm]);
 
-  const handleCandidateSelect = (candidateId) => {
+  const handleCandidateSelect = (candidateId: number) => {
     setSelectedCandidates(prev =>
       prev.includes(candidateId) ? prev.filter(id => id !== candidateId) : [...prev, candidateId]
     );
@@ -150,7 +287,7 @@ const Results = () => {
     }
   };
 
-  const handleLikeToggle = async (candidateId, currentLiked) => {
+  const handleLikeToggle = async (candidateId: number, currentLiked: boolean) => {
     try {
       await axios.post(`${import.meta.env.VITE_API_URL}/api/like-candidate`, {
         candidate_id: candidateId,
@@ -169,7 +306,6 @@ const Results = () => {
   };
 
   const handleAddToFinalSelects = async () => {
-    // Only add candidates that are both selected AND in the filtered list
     const selectedFiltered = getSelectedFilteredCandidates();
     
     if (selectedFiltered.length === 0) {
@@ -190,7 +326,6 @@ const Results = () => {
       }, 3000);
       toast.success(`${selectedFiltered.length} candidates added to Final Selects.`);
       
-      // Clear selections after successful addition
       setSelectedCandidates([]);
     } catch (error) {
       console.error("Failed to add to final selects:", error);
@@ -199,13 +334,12 @@ const Results = () => {
   };
 
   const handleAddCustomQuestion = () => {
-    // Initialize the modal's question state with the currently saved question
     setCustomQuestion(savedCustomQuestion); 
-    setGeneratedOptions([]); // Clear generated options on open
+    setGeneratedOptions([]); 
     setShowCustomQuestionModal(true);
   };
 
-  const handleSelectGeneratedOption = (question) => {
+  const handleSelectGeneratedOption = (question: string) => {
     setCustomQuestion(question);
   };
 
@@ -214,7 +348,6 @@ const Results = () => {
     try {
       const token = localStorage.getItem("access_token");
 
-      // Note: This endpoint is separate from /api/custom-question
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/get-questions?search_id=${searchId}`, {
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -224,7 +357,6 @@ const Results = () => {
       
       if (res.data.success && res.data.questions && res.data.questions.length > 0) {
         setGeneratedOptions(res.data.questions); 
-        // Auto-select the first generated question only if the textarea is currently empty
         if (!customQuestion.trim()) {
             setCustomQuestion(res.data.questions[0]);
         }
@@ -232,7 +364,7 @@ const Results = () => {
       } else {
         toast.error("AI failed to generate questions. Please try again or enter a custom one.");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to generate question", error.response?.data || error.message);
       toast.error(`Failed to generate question: ${error.response?.data?.error || "Server error"}`);
     } finally {
@@ -253,7 +385,6 @@ const Results = () => {
     }
 
     try {
-      // Use the updated combined endpoint for POST
       await axios.post(`${import.meta.env.VITE_API_URL}/api/custom-question`, {
         search_id: searchId,
         question: customQuestion
@@ -265,12 +396,12 @@ const Results = () => {
       });
       
       toast.success("Custom question saved successfully!");
-      setSavedCustomQuestion(customQuestion); // Update the saved state
+      setSavedCustomQuestion(customQuestion); 
       setShowCustomQuestionModal(false);
-      setCustomQuestion(''); // Clear modal state
+      setCustomQuestion(''); 
       setGeneratedOptions([]); 
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to save custom question", error.response?.data || error.message);
       toast.error(`Failed to save custom question: ${error.response?.data?.error || "Server error"}`);
     }
@@ -280,7 +411,6 @@ const Results = () => {
     navigate('/final-selects');
   };
 
-  // UPDATED FUNCTION: Handle candidate data export (Client-side CSV generation)
   const handleExportCandidates = () => {
     if (filteredCandidates.length === 0) {
         toast.warning("No candidates in the current filtered view to export.");
@@ -292,27 +422,23 @@ const Results = () => {
             "Name", "Email", "Phone", "Total Exp", "Relevant Exp", "Match Score (%)", "Call Status", "Liked", "Skills"
         ];
         
-        // Map candidate data to CSV rows
         const csvRows = filteredCandidates.map(c => [
-            // Ensure data is wrapped in quotes if it might contain commas or newlines
             `"${c.name.replace(/"/g, '""')}"`, 
             `"${c.email.replace(/"/g, '""')}"`, 
             `"${c.phone.replace(/"/g, '""')}"`, 
-            c.totalExp,
-            c.relevantExp,
+            c.total_experience || '-', 
+            c.relevant_work_experience || '-', 
             c.match_score,
             `"${c.call_status.replace(/"/g, '""')}"`,
             c.liked ? 'Yes' : 'No',
             `"${c.skills.replace(/"/g, '""')}"`
         ].join(','));
 
-        // Combine headers and rows
         const csvString = [
             headers.join(','),
             ...csvRows
         ].join('\n');
 
-        // Create Blob and trigger download
         const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -323,7 +449,6 @@ const Results = () => {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
 
-
         toast.success(`Exported ${filteredCandidates.length} candidates to CSV.`);
 
     } catch (error) {
@@ -332,8 +457,7 @@ const Results = () => {
     }
   };
 
-
-  const handleCallCandidate = async (candidate) => {
+  const handleCallCandidate = async (candidate: Candidate) => {
     try {
       await axios.post(`${import.meta.env.VITE_API_URL}/api/call-single`, {
         search_id: searchId,
@@ -359,7 +483,6 @@ const Results = () => {
   };
 
   const handleCallSelectedCandidates = async () => {
-    // Only call candidates that are both selected AND in the filtered list
     const selectedFiltered = getSelectedFilteredCandidates();
     
     if (selectedFiltered.length === 0) {
@@ -390,7 +513,6 @@ const Results = () => {
       }, 3000);
       toast.success(`${selectedFiltered.length} calls initiated successfully.`);
       
-      // Clear selections after successful call
       setSelectedCandidates([]);
     } catch (error) {
       console.error("Failed to call selected candidates", error);
@@ -427,7 +549,7 @@ const Results = () => {
     }
   };
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'Called & Answered': return 'text-green-400 bg-green-400/20';
       case 'Re-schedule': return 'text-yellow-400 bg-yellow-400/20';
@@ -438,7 +560,7 @@ const Results = () => {
     }
   };
 
-  const getMatchScoreColor = (score) => {
+  const getMatchScoreColor = (score: number) => {
     if (score >= 90) return 'text-green-400 bg-green-400/20';
     if (score >= 80) return 'text-yellow-400 bg-yellow-400/20';
     return 'text-red-400 bg-red-400/20';
@@ -447,11 +569,13 @@ const Results = () => {
   if (loading) {
     return (
       <div className="text-center py-12">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
         <p className="text-lg font-medium text-muted-foreground">Loading candidates...</p>
       </div>
     );
   }
 
+  // Fallback for empty results
   if (candidates.length === 0) {
     return (
       <div className="space-y-6">
@@ -461,6 +585,10 @@ const Results = () => {
             <p className="text-muted-foreground">Search #{searchId}</p>
           </div>
           <div className="flex items-center space-x-3">
+            <Button onClick={handleOpenAddModal} className="bg-primary hover:bg-primary/90 text-white">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Candidate
+            </Button>
             <Button onClick={handleViewFinalSelects} className="bg-accent hover:bg-accent/90 text-white glow-accent">
               <UserCheck className="w-4 h-4 mr-2" />
               View Final Selects
@@ -474,14 +602,14 @@ const Results = () => {
             { label: "Re-Scheduled", value: 0, icon: <Phone />, color: "yellow-400" },
             { label: "Total Found", value: 0, icon: <Star />, color: "accent" }
           ].map((stat, idx) => (
-            <Card key={idx} className={`bg-card/50 backdrop-blur-sm border-${stat.color}/20`}>
+            <Card key={idx} className={`bg-card/50 backdrop-blur-sm border-primary/20`}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">{stat.label}</p>
-                    <p className={`text-2xl font-bold text-${stat.color}`}>{stat.value}</p>
+                    <p className={`text-2xl font-bold text-white`}>{stat.value}</p> 
                   </div>
-                  <div className={`w-8 h-8 text-${stat.color}`}>{stat.icon}</div>
+                  <div className={`w-8 h-8 text-primary`}>{stat.icon}</div>
                 </div>
               </CardContent>
             </Card>
@@ -502,11 +630,17 @@ const Results = () => {
             </div>
           </CardContent>
         </Card>
+        <CandidateFormModal
+            isOpen={isModalOpen}
+            onClose={handleCloseModal}
+            candidateId={candidateToEditId} 
+            searchId={Number(searchId)}
+            onSuccess={handleCandidateSuccess}
+        />
       </div>
     );
   }
 
-  // Calculate how many selected candidates are in the current filtered view
   const selectedFilteredCount = getSelectedFilteredCandidates().length;
   const allFilteredSelected = filteredCandidates.length > 0 && 
                               filteredCandidates.every(c => selectedCandidates.includes(c.id));
@@ -522,6 +656,10 @@ const Results = () => {
           </p>
         </div>
         <div className="flex items-center space-x-3">
+          <Button onClick={handleOpenAddModal} className="bg-primary hover:bg-primary/90 text-white">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Candidate
+          </Button>
           <Button onClick={handleAddCustomQuestion} className="bg-accent hover:bg-accent/90 text-white glow-accent">
             {savedCustomQuestion ? 'Edit Custom Question' : 'Add Custom Question'}            
           </Button>
@@ -530,7 +668,7 @@ const Results = () => {
             View Final Selects
           </Button>
           <Button 
-            onClick={handleExportCandidates} // Uses the new CSV export function
+            onClick={handleExportCandidates} 
             variant="outline" 
             className="border-primary/30 hover:bg-primary/10"
           >
@@ -540,6 +678,7 @@ const Results = () => {
         </div>
       </div>
 
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
           { label: "Shortlisted Count", value: stats.shortlisted, icon: <CheckSquare />, color: "primary" },
@@ -547,20 +686,21 @@ const Results = () => {
           { label: "Re-Scheduled", value: stats.rescheduled, icon: <Phone />, color: "yellow-400" },
           { label: "Total Found", value: stats.total, icon: <Star />, color: "accent" }
         ].map((stat, idx) => (
-          <Card key={idx} className={`bg-card/50 backdrop-blur-sm border-${stat.color}/20`}>
+          <Card key={idx} className={`bg-card/50 backdrop-blur-sm border-primary/20`}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{stat.label}</p>
-                  <p className={`text-2xl font-bold text-${stat.color}`}>{stat.value}</p>
+                  <p className={`text-2xl font-bold text-white`}>{stat.value}</p> 
                 </div>
-                <div className={`w-8 h-8 text-${stat.color}`}>{stat.icon}</div>
+                <div className={`w-8 h-8 text-primary`}>{stat.icon}</div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
+      {/* Filter/Sort/Search Bar */}
       <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
@@ -606,6 +746,7 @@ const Results = () => {
         </CardContent>
       </Card>
 
+      {/* Candidate Table */}
       <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
@@ -643,8 +784,7 @@ const Results = () => {
                 {filteredCandidates.map(candidate => (
                   <TableRow
                     key={candidate.id}
-                    className="hover:bg-primary/5 cursor-pointer"
-                    onClick={() => navigate(`/transcript/${candidate.id}`)}
+                    className="hover:bg-primary/5"
                   >
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <input
@@ -653,9 +793,8 @@ const Results = () => {
                         onChange={() => handleCandidateSelect(candidate.id)}
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="cursor-pointer" onClick={() => navigate(`/transcript/${candidate.id}`)}>
                       <div className="flex items-center space-x-3">
-
                         <div>
                           <p className="font-medium">{candidate.name}</p>
                           <p className="text-xs text-muted-foreground">{candidate.skills}</p>
@@ -664,8 +803,23 @@ const Results = () => {
                     </TableCell>
                     <TableCell className="text-muted-foreground">{candidate.email}</TableCell>
                     <TableCell className="text-muted-foreground">{candidate.phone}</TableCell>
-                    <TableCell>{candidate.totalExp}</TableCell>
-                    <TableCell>{candidate.relevantExp}</TableCell>
+                    
+                    {/* FIXED: Display experience properly, checking for '0', null, undefined, and empty string */}
+                    <TableCell>
+                      {candidate.total_experience && 
+                       candidate.total_experience !== '0' && 
+                       candidate.total_experience.trim() !== '' 
+                        ? `${candidate.total_experience} yrs` 
+                        : '-'}
+                    </TableCell>
+                    <TableCell>
+                      {candidate.relevant_work_experience && 
+                       candidate.relevant_work_experience !== '0' && 
+                       candidate.relevant_work_experience.trim() !== '' 
+                        ? `${candidate.relevant_work_experience} yrs` 
+                        : '-'}
+                    </TableCell>
+                    
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-sm font-medium ${getMatchScoreColor(candidate.match_score)}`}>
                         {candidate.match_score}%
@@ -678,6 +832,24 @@ const Results = () => {
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center space-x-2">
+                         {/* EDIT CANDIDATE BUTTON */}
+                         <button
+                            onClick={() => handleOpenEditModal(candidate.id)}
+                            className="p-1 hover:bg-primary/10 rounded"
+                            title="Edit Candidate"
+                          >
+                            <Edit3 className="w-4 h-4 text-blue-400" />
+                          </button>
+                        
+                         {/* DELETE CANDIDATE BUTTON - Now with confirmation */}
+                         <button
+                            onClick={() => handleDeleteClick(candidate.id, candidate.name)}
+                            className="p-1 hover:bg-red-400/10 rounded"
+                            title="Delete Candidate"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-400" />
+                          </button>
+
                         <Button
                           size="sm"
                           variant="outline"
@@ -706,6 +878,7 @@ const Results = () => {
         </CardContent>
       </Card>
 
+      {/* Bulk Actions */}
       <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
         <CardContent className="p-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -738,6 +911,7 @@ const Results = () => {
         </CardContent>
       </Card>
       
+      {/* SUCCESS TOAST NOTIFICATIONS */}
       {showCallSuccess && (
         <div className="fixed bottom-5 right-5 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg animate-slide-up z-50">
           {callSuccessName ? `Call to ${callSuccessName} initiated successfully!` : 'Calls initiated successfully!'}
@@ -750,6 +924,50 @@ const Results = () => {
         </div>
       )}
 
+      {/* DELETE CONFIRMATION MODAL */}
+      {deleteConfirmation.show && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <Card className="bg-card border-red-400/20 w-full max-w-md">
+            <CardHeader className="border-b border-red-400/10">
+              <CardTitle className="text-xl flex items-center gap-2 text-red-400">
+                <AlertTriangle className="w-6 h-6" />
+                Confirm Deletion
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <p className="text-foreground mb-4">
+                Are you sure you want to delete this candidate? This action cannot be undone.
+              </p>
+              <div className="bg-red-400/10 border border-red-400/30 p-4 rounded-lg mb-6">
+                <p className="text-sm font-semibold text-red-400">
+                  {deleteConfirmation.candidateName}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  All associated data will be permanently removed.
+                </p>
+              </div>
+              <div className="flex items-center justify-end gap-3">
+                <Button
+                  onClick={handleCancelDelete}
+                  variant="outline"
+                  className="border-primary/30 hover:bg-primary/10"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleConfirmDelete}
+                  className="bg-red-500 hover:bg-red-600 text-white"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Permanently
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* CUSTOM QUESTION MODAL */}
       {showCustomQuestionModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <Card className="bg-card border-primary/20 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -884,6 +1102,15 @@ const Results = () => {
           </Card>
         </div>
       )}
+
+      {/* CANDIDATE FORM MODAL (Add/Edit) - This modal has its own confirmation */}
+      <CandidateFormModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        candidateId={candidateToEditId} 
+        searchId={Number(searchId)}
+        onSuccess={handleCandidateSuccess}
+      />
     </div>
   );
 };
