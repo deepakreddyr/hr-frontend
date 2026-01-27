@@ -11,26 +11,66 @@ import {
   CheckCircle,
   XCircle,
   Calendar,
-  Hash
+  Hash,
+  Award,
+  TrendingUp,
+  TrendingDown,
+  Target,
+  Briefcase,
+  Mail,
+  Code,
+  Zap,
+  FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 
+interface AgentChecks {
+  agent_1_summary?: string;
+  agent_2_skills_gap?: {
+    missing_critical?: string[];
+    strong_matches?: string[];
+  };
+  agent_3_project_depth?: string;
+  agent_4_recommendation?: {
+    reasoning?: string;
+    recommendation?: string;
+  };
+}
+
+interface AnalysisReport {
+  agent_checks?: AgentChecks;
+  candidate_id?: string;
+  candidate_name?: string;
+  email?: string;
+  phone?: string;
+  experience_in_skills?: { [key: string]: string };
+  overall_match_score?: number;
+  relevant_experience_years?: string;
+  scoring_tier?: string;
+  special_highlights?: string[];
+  strengths?: string[];
+  total_work_experience_years?: string;
+  weaknesses?: string[];
+}
+
 interface Candidate {
   name: string;
-  phone: string;
+  phone: string | number;
   email: string;
-  skills: string[];
+  skills: string | string[];
   matchScore: number;
   callStatus: string;
   totalExperience: string;
   relevantExperience: string;
   summary: string;
-  liked: boolean;
-  hiringStatus: string;
-  joinStatus: string;
+  liked: boolean | null;
+  hiringStatus: string | null;
+  joinStatus: string | null;
+  skillsExperience?: { [key: string]: string };
+  analysisReport?: AnalysisReport;
 }
 
 interface TranscriptEntry {
@@ -83,11 +123,27 @@ const formatStructuredKey = (key: string): string => {
     .join(' ');
 };
 
+const getScoreTierColor = (tier: string): string => {
+  const tierLower = tier?.toLowerCase() || '';
+  if (tierLower.includes('excellent') || tierLower.includes('outstanding')) return 'text-green-400 bg-green-400/20 border-green-400/30';
+  if (tierLower.includes('good') || tierLower.includes('strong')) return 'text-blue-400 bg-blue-400/20 border-blue-400/30';
+  if (tierLower.includes('average') || tierLower.includes('moderate')) return 'text-yellow-400 bg-yellow-400/20 border-yellow-400/30';
+  return 'text-gray-400 bg-gray-400/20 border-gray-400/30';
+};
+
+const getRecommendationColor = (recommendation: string): string => {
+  const recLower = recommendation?.toLowerCase() || '';
+  if (recLower.includes('hire') || recLower.includes('interview')) return 'text-green-400 bg-green-400/20 border-green-400/30';
+  if (recLower.includes('consider') || recLower.includes('maybe')) return 'text-yellow-400 bg-yellow-400/20 border-yellow-400/30';
+  if (recLower.includes('reject') || recLower.includes('pass')) return 'text-red-400 bg-red-400/20 border-red-400/30';
+  return 'text-blue-400 bg-blue-400/20 border-blue-400/30';
+};
+
 const renderStructuredValue = (value: any): JSX.Element => {
   if (value === null || value === undefined) {
     return <span className="text-muted-foreground italic">N/A</span>;
   }
-  
+
   if (typeof value === 'boolean') {
     return value ? (
       <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
@@ -99,53 +155,71 @@ const renderStructuredValue = (value: any): JSX.Element => {
       </Badge>
     );
   }
-  
+
   if (typeof value === 'object' && !Array.isArray(value)) {
     return (
-      <div className="text-xs text-muted-foreground bg-secondary/50 rounded p-2 mt-1 font-mono">
-        {JSON.stringify(value, null, 2)}
+      <div className="text-xs text-muted-foreground bg-secondary/50 rounded-md p-3 mt-2 font-mono overflow-x-auto border border-border/50">
+        <pre>{JSON.stringify(value, null, 2)}</pre>
       </div>
     );
   }
-  
+
   if (Array.isArray(value)) {
+    // Check if items are long (longer than 50 chars) to switch from badges to list
+    const hasLongItems = value.some(item => String(item).length > 50);
+
+    if (hasLongItems) {
+      return (
+        <ul className="space-y-3 mt-2">
+          {value.map((item, idx) => (
+            <li key={idx} className="bg-secondary/40 hover:bg-secondary/60 transition-colors rounded-lg p-3 text-sm text-foreground leading-relaxed border border-border/50 shadow-sm">
+              <div className="flex items-start gap-2">
+                <div className="min-w-1.5 min-h-1.5 w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                <span>{String(item)}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      );
+    }
+
     return (
-      <div className="flex flex-wrap gap-1 mt-1">
+      <div className="flex flex-wrap gap-2 mt-2">
         {value.map((item, idx) => (
-          <Badge key={idx} variant="outline" className="text-xs">
+          <Badge key={idx} variant="outline" className="text-xs px-2.5 py-1 bg-secondary/20 hover:bg-secondary/40 transition-colors">
             {String(item)}
           </Badge>
         ))}
       </div>
     );
   }
-  
+
   const strValue = String(value);
-  
-  // Check if it's a date
+
+  // Date detection
   if (strValue.match(/^\d{4}-\d{2}-\d{2}/) || strValue.includes('T')) {
     try {
       const date = new Date(strValue);
       if (!isNaN(date.getTime())) {
         return (
-          <span className="text-foreground flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
+          <span className="text-foreground flex items-center gap-1.5 bg-secondary/20 px-2 py-0.5 rounded text-sm w-fit">
+            <Calendar className="w-3.5 h-3.5 opacity-70" />
             {date.toLocaleString()}
           </span>
         );
       }
-    } catch (e) {}
+    } catch (e) { }
   }
-  
-  // Long text
-  if (strValue.length > 50) {
+
+  // Long string handling
+  if (strValue.length > 60) {
     return (
-      <p className="text-sm text-foreground bg-secondary/30 rounded p-2 mt-1 leading-relaxed">
+      <div className="text-sm text-foreground bg-secondary/30 rounded-lg p-3 mt-1 leading-relaxed border border-border/50">
         {strValue}
-      </p>
+      </div>
     );
   }
-  
+
   return <span className="text-foreground font-medium">{strValue}</span>;
 };
 
@@ -157,6 +231,7 @@ const Transcript: React.FC = () => {
   const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [calls, setCalls] = useState<CallRecord[]>([]);
   const [activeCallId, setActiveCallId] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<string>('overview');
 
   const activeCallRecord = calls.find(call => String(call.id) === activeCallId);
 
@@ -170,11 +245,11 @@ const Transcript: React.FC = () => {
 
     let fileContent = `--- Transcript for ${candidateName} (Call ${callIndex}) ---\n`;
     fileContent += `Date: ${safeRender(activeCallRecord.call.timestamp ? new Date(activeCallRecord.call.timestamp).toLocaleString() : null)}\n\n`;
-    
+
     if (transcriptData.length === 0) {
       fileContent += "--- NO TRANSCRIPT DATA AVAILABLE ---\n";
     } else {
-      const formattedTranscript = transcriptData.map(entry => 
+      const formattedTranscript = transcriptData.map(entry =>
         `${entry.speaker === 'ai' ? 'AI Recruiter' : candidateName}: ${entry.message}`
       ).join('\n\n');
       fileContent += formattedTranscript;
@@ -207,7 +282,7 @@ const Transcript: React.FC = () => {
 
         setCandidate(data.candidate);
         setCalls(data.calls || []);
-        
+
         if (data.calls && data.calls.length > 0) {
           setActiveCallId(String(data.calls[data.calls.length - 1].id));
         }
@@ -227,7 +302,7 @@ const Transcript: React.FC = () => {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading call history...</p>
+          <p className="text-muted-foreground">Loading candidate data...</p>
         </div>
       </div>
     );
@@ -235,11 +310,16 @@ const Transcript: React.FC = () => {
 
   const activeCallData = activeCallRecord || ({} as CallRecord);
   const transcriptData: TranscriptEntry[] = activeCallData.transcript || [];
-  const evaluationData: Evaluation = activeCallData.evaluation || {};
   const structuredData: StructuredData = activeCallData.structured || {};
   const callInfo: CallInfo = activeCallData.call || {} as CallInfo;
   const callSummary = callInfo.summary;
   const callDuration = callInfo.duration;
+
+  const analysisReport = candidate?.analysisReport;
+  const agentChecks = analysisReport?.agent_checks;
+  const skillsArray = typeof candidate?.skills === 'string'
+    ? candidate.skills.split(',').map(s => s.trim())
+    : (candidate?.skills || []);
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -256,253 +336,485 @@ const Transcript: React.FC = () => {
           </Button>
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-              Call History for {safeRender(candidate?.name, 'Unknown Candidate')}
+              {safeRender(candidate?.name, 'Unknown Candidate')}
             </h1>
             <p className="text-sm text-muted-foreground">
               Candidate ID: {candidateId} | Total Calls: {calls.length}
             </p>
           </div>
         </div>
-        <Button 
-          variant="outline" 
-          className="border-accent/30 text-accent hover:bg-accent/10 w-full md:w-auto"
-          onClick={handleDownload}
-          disabled={calls.length === 0}
-        >
-          <Download className="w-4 h-4 mr-2" /> Download Transcript
-        </Button>
+        {calls.length > 0 && (
+          <Button
+            variant="outline"
+            className="border-accent/30 text-accent hover:bg-accent/10 w-full md:w-auto"
+            onClick={handleDownload}
+          >
+            <Download className="w-4 h-4 mr-2" /> Download Transcript
+          </Button>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Candidate Info Card */}
-        <div className="lg:col-span-1 space-y-6">
-          <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <div className="w-10 h-10 bg-gradient-to-r from-primary to-accent rounded-full flex items-center justify-center text-white font-bold text-sm">
-                  {candidate?.name?.split(' ').map(n => n[0]).join('') || '?'}
-                </div>
-                <div>
-                  <span className="text-lg">{safeRender(candidate?.name)}</span>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Contact Info */}
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                  <span className="text-sm text-foreground truncate">{safeRender(candidate?.phone)}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                  <span className="text-sm text-foreground">
-                    Active Call: {safeRender(callDuration, 'N/A')} min
-                  </span>
-                </div>
-              </div>
+      {/* Main Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-6">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="analysis">AI Analysis</TabsTrigger>
+          <TabsTrigger value="skills">Skills & Experience</TabsTrigger>
+          <TabsTrigger value="calls">Call History</TabsTrigger>
+        </TabsList>
 
-              {/* Match Score */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Match Score</span>
-                  <span className="px-2 py-1 rounded-full text-sm font-medium bg-green-400/20 text-green-400">
-                    {safeRender(candidate?.matchScore, '0')}%
-                  </span>
-                </div>
-                <div className="w-full bg-secondary rounded-full h-2">
-                  <div
-                    className="bg-gradient-to-r from-primary to-accent h-2 rounded-full transition-all"
-                    style={{ width: `${candidate?.matchScore || 0}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Experience & Status */}
-              <div className="space-y-2">
-                <div className="flex justify-between items-start gap-2">
-                  <span className="text-sm text-muted-foreground">Total Experience</span>
-                  <span className="text-sm text-foreground text-right">{safeRender(candidate?.totalExperience)}</span>
-                </div>
-                <div className="flex justify-between items-start gap-2">
-                  <span className="text-sm text-muted-foreground">Relevant Experience</span>
-                  <span className="text-sm text-foreground text-right">{safeRender(candidate?.relevantExperience)}</span>
-                </div>
-                <div className="flex justify-between items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Hiring Status</span>
-                  <Badge className="bg-primary/20 text-primary border-primary/30">
-                    {safeRender(candidate?.hiringStatus, 'N/A')}
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Structured Data Card - Enhanced */}
-          <Card className="bg-card/50 backdrop-blur-sm border-accent/20">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2 text-base">
-                <Hash className="w-4 h-4 text-accent" />
-                <span>Structured Info (Call {calls.findIndex(c => String(c.id) === activeCallId) + 1})</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {Object.keys(structuredData).length > 0 ? (
-                <div className="space-y-3">
-                  {Object.entries(structuredData).map(([key, value], i) => (
-                    <div key={i} className="border-b border-border/50 pb-3 last:border-0 last:pb-0">
-                      <div className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wide">
-                        {formatStructuredKey(key)}
-                      </div>
-                      <div className="text-sm">
-                        {renderStructuredValue(value)}
-                      </div>
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Quick Stats */}
+            <Card className="lg:col-span-2 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="w-5 h-5 text-primary" />
+                  Quick Stats
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center p-4 bg-card/50 rounded-lg">
+                    <div className="text-3xl font-bold text-green-400">
+                      {candidate?.matchScore || 0}%
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2 text-muted-foreground py-4">
-                  <AlertTriangle className="w-4 h-4" />
-                  <p className="text-sm italic">No structured data for this call.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* AI Evaluation Card */}
-          <Card className="bg-card/50 backdrop-blur-sm border-accent/20">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2 text-base">
-                <Star className="w-4 h-4 text-accent" />
-                <span>AI Evaluation</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-foreground">Match Score</span>
-                <span className="px-2 py-1 rounded-full text-sm font-medium bg-green-400/20 text-green-400">
-                  {safeRender(candidate?.matchScore, '0')}%
-                </span>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-medium text-foreground mb-2">Candidate Summary</h4>
-                <p className="text-sm text-foreground/80 leading-relaxed">
-                  {safeRender(candidate?.summary, 'No overall candidate summary available.')}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Call History/Transcript Section */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <MessageSquare className="w-5 h-5 text-primary" />
-                <span>Call History</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {calls.length > 0 ? (
-                <Tabs value={activeCallId} onValueChange={setActiveCallId} className="w-full">
-                  <div className="overflow-x-auto pb-2">
-                    <TabsList className="inline-flex h-auto min-w-full justify-start mb-4">
-                      {calls.map((call, index) => (
-                        <TabsTrigger 
-                          key={call.id} 
-                          value={String(call.id)} 
-                          className="text-xs px-4 py-2 whitespace-nowrap data-[state=active]:bg-primary/20"
-                        >
-                          Call {index + 1}
-                        </TabsTrigger>
-                      ))}
-                    </TabsList>
+                    <div className="text-xs text-muted-foreground mt-1">Match Score</div>
                   </div>
-
-                  {calls.map((callRecord, index) => (
-                    <TabsContent key={callRecord.id} value={String(callRecord.id)} className="mt-4">
-                      <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                        <h3 className="text-lg font-semibold text-foreground">
-                          Transcript for Call {index + 1}
-                        </h3>
-                        {callRecord.call.timestamp && (
-                          <span className="text-sm text-muted-foreground flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {new Date(callRecord.call.timestamp).toLocaleString()}
-                          </span>
-                        )}
-                      </div>
-                      
-                      <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-                        {callRecord.transcript.length > 0 ? (
-                          callRecord.transcript.map((entry, idx) => (
-                            <div
-                              key={idx}
-                              className={`flex ${entry.speaker === 'ai' ? 'justify-start' : 'justify-end'} animate-fade-in`}
-                            >
-                              <div
-                                className={`max-w-[85%] sm:max-w-[80%] p-3 rounded-lg shadow-sm ${
-                                  entry.speaker === 'ai'
-                                    ? 'bg-primary/10 border border-primary/20 text-foreground'
-                                    : 'bg-accent/10 border border-accent/20 text-foreground'
-                                }`}
-                              >
-                                <div className="flex items-center justify-between mb-1.5 gap-2">
-                                  <span
-                                    className={`text-xs font-semibold ${
-                                      entry.speaker === 'ai' ? 'text-primary' : 'text-accent'
-                                    }`}
-                                  >
-                                    {entry.speaker === 'ai' ? 'Divya' : safeRender(candidate?.name)}
-                                  </span>
-                                  {entry.timestamp && (
-                                    <span className="text-xs text-muted-foreground">
-                                      {safeRender(entry.timestamp)}
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                                  {safeRender(entry.message)}
-                                </p>
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="p-6 bg-secondary/50 rounded-lg flex items-center justify-center space-x-2 text-muted-foreground">
-                            <AlertTriangle className="w-5 h-5" />
-                            <p>No transcript data available for this call.</p>
-                          </div>
-                        )}
-                      </div>
-                    </TabsContent>
-                  ))}
-                </Tabs>
-              ) : (
-                <div className="p-6 bg-secondary/50 rounded-lg flex items-center justify-center space-x-2 text-muted-foreground">
-                  <AlertTriangle className="w-5 h-5" />
-                  <p>No call records found for this candidate.</p>
+                  <div className="text-center p-4 bg-card/50 rounded-lg">
+                    <div className="text-2xl font-bold text-primary">
+                      {candidate?.totalExperience || 'N/A'}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">Total Exp.</div>
+                  </div>
+                  <div className="text-center p-4 bg-card/50 rounded-lg">
+                    <div className="text-2xl font-bold text-accent">
+                      {candidate?.relevantExperience || 'N/A'}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">Relevant Exp.</div>
+                  </div>
+                  <div className="text-center p-4 bg-card/50 rounded-lg">
+                    <Badge className={getScoreTierColor(analysisReport?.scoring_tier || '')}>
+                      {analysisReport?.scoring_tier || 'N/A'}
+                    </Badge>
+                    <div className="text-xs text-muted-foreground mt-2">Scoring Tier</div>
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Call Summary */}
+            {/* Contact Info */}
+            <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Phone className="w-4 h-4 text-primary" />
+                  Contact Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <span className="text-sm text-foreground truncate">{safeRender(candidate?.email)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <span className="text-sm text-foreground">{safeRender(candidate?.phone)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <span className="text-sm text-foreground">Status: {safeRender(candidate?.callStatus, 'N/A')}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Summary */}
           <Card className="bg-card/50 backdrop-blur-sm border-accent/20">
             <CardHeader>
-              <CardTitle className="text-base">
-                Call Summary (Call {calls.findIndex(c => String(c.id) === activeCallId) + 1})
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-accent" />
+                Candidate Summary
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-foreground leading-relaxed">
-                {safeRender(callSummary, 'No summary available for the selected call.')}
+              <p className="text-foreground leading-relaxed">
+                {safeRender(candidate?.summary || analysisReport?.agent_checks?.agent_1_summary,
+                  'No summary available for this candidate.')}
               </p>
             </CardContent>
           </Card>
-        </div>
-      </div>
+        </TabsContent>
+
+        {/* AI Analysis Tab */}
+        <TabsContent value="analysis" className="space-y-6">
+          {agentChecks ? (
+            <>
+              {/* Recommendation */}
+              {agentChecks.agent_4_recommendation && (
+                <Card className="bg-gradient-to-br from-green-500/10 to-blue-500/10 border-green-500/20">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Award className="w-5 h-5 text-green-400" />
+                      AI Recommendation
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Decision:</span>
+                      <Badge className={getRecommendationColor(agentChecks.agent_4_recommendation.recommendation || '')}>
+                        {agentChecks.agent_4_recommendation.recommendation || 'N/A'}
+                      </Badge>
+                    </div>
+                    {agentChecks.agent_4_recommendation.reasoning && (
+                      <div className="p-4 bg-card/50 rounded-lg">
+                        <p className="text-sm text-foreground leading-relaxed">
+                          {agentChecks.agent_4_recommendation.reasoning}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Skills Assessment */}
+              {agentChecks.agent_2_skills_gap && (
+                <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Code className="w-5 h-5 text-primary" />
+                      Skills Assessment
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {agentChecks.agent_2_skills_gap.strong_matches && agentChecks.agent_2_skills_gap.strong_matches.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <TrendingUp className="w-4 h-4 text-green-400" />
+                          <h4 className="text-sm font-semibold text-foreground">Strong Matches</h4>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {agentChecks.agent_2_skills_gap.strong_matches.map((skill, idx) => (
+                            <Badge key={idx} className="bg-green-400/20 text-green-400 border-green-400/30">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {agentChecks.agent_2_skills_gap.missing_critical && agentChecks.agent_2_skills_gap.missing_critical.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <TrendingDown className="w-4 h-4 text-red-400" />
+                          <h4 className="text-sm font-semibold text-foreground">Missing Critical Skills</h4>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {agentChecks.agent_2_skills_gap.missing_critical.map((skill, idx) => (
+                            <Badge key={idx} className="bg-red-400/20 text-red-400 border-red-400/30">
+                              <XCircle className="w-3 h-3 mr-1" />
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Project Depth */}
+              {agentChecks.agent_3_project_depth && (
+                <Card className="bg-card/50 backdrop-blur-sm border-accent/20">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Zap className="w-5 h-5 text-accent" />
+                      Project Depth Assessment
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-foreground leading-relaxed">
+                      {agentChecks.agent_3_project_depth}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Strengths & Weaknesses */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {analysisReport?.strengths && analysisReport.strengths.length > 0 && (
+                  <Card className="bg-card/50 backdrop-blur-sm border-green-500/20">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <TrendingUp className="w-4 h-4 text-green-400" />
+                        Strengths
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="space-y-2">
+                        {analysisReport.strengths.map((strength, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-sm text-foreground">
+                            <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
+                            {strength}
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {analysisReport?.weaknesses && analysisReport.weaknesses.length > 0 && (
+                  <Card className="bg-card/50 backdrop-blur-sm border-yellow-500/20">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                        Areas for Improvement
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="space-y-2">
+                        {analysisReport.weaknesses.map((weakness, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-sm text-foreground">
+                            <AlertTriangle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                            {weakness}
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* Special Highlights */}
+              {analysisReport?.special_highlights && analysisReport.special_highlights.length > 0 && (
+                <Card className="bg-gradient-to-br from-accent/10 to-primary/10 border-accent/20">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Star className="w-5 h-5 text-accent" />
+                      Special Highlights
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {analysisReport.special_highlights.map((highlight, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm text-foreground">
+                          <Star className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
+                          {highlight}
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          ) : (
+            <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+              <CardContent className="p-12">
+                <div className="flex flex-col items-center justify-center text-muted-foreground">
+                  <AlertTriangle className="w-12 h-12 mb-4" />
+                  <p>No AI analysis report available for this candidate.</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Skills & Experience Tab */}
+        <TabsContent value="skills" className="space-y-6">
+          {/* Skills List */}
+          <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Code className="w-5 h-5 text-primary" />
+                Technical Skills
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {skillsArray.map((skill, idx) => (
+                  <Badge key={idx} variant="outline" className="px-3 py-1">
+                    {skill}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Experience in Skills */}
+          {(candidate?.skillsExperience || analysisReport?.experience_in_skills) && (
+            <Card className="bg-card/50 backdrop-blur-sm border-accent/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="w-5 h-5 text-accent" />
+                  Experience in Skills
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Object.entries(candidate?.skillsExperience || analysisReport?.experience_in_skills || {})
+                    .sort(([, a], [, b]) => {
+                      const parseExp = (exp: string) => {
+                        const match = exp.match(/(\d+)\s*year/);
+                        return match ? parseInt(match[1]) : 0;
+                      };
+                      return parseExp(String(b)) - parseExp(String(a));
+                    })
+                    .map(([skill, experience]) => (
+                      <div key={skill} className="p-3 bg-secondary/30 rounded-lg border border-border/50">
+                        <div className="font-medium text-sm text-foreground mb-1">{skill}</div>
+                        <div className="text-xs text-muted-foreground">{String(experience)}</div>
+                      </div>
+                    ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Call History Tab */}
+        <TabsContent value="calls" className="space-y-6">
+          {calls.length > 0 ? (
+            <>
+              <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="w-5 h-5 text-primary" />
+                    Call Transcripts
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Tabs value={activeCallId} onValueChange={setActiveCallId} className="w-full">
+                    <div className="overflow-x-auto pb-2">
+                      <TabsList className="inline-flex h-auto min-w-full justify-start mb-4">
+                        {calls.map((call, index) => (
+                          <TabsTrigger
+                            key={call.id}
+                            value={String(call.id)}
+                            className="text-xs px-4 py-2 whitespace-nowrap"
+                          >
+                            Call {index + 1}
+                          </TabsTrigger>
+                        ))}
+                      </TabsList>
+                    </div>
+
+                    {calls.map((callRecord, index) => (
+                      <TabsContent key={callRecord.id} value={String(callRecord.id)} className="mt-4">
+                        <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <h3 className="text-lg font-semibold text-foreground">
+                            Transcript for Call {index + 1}
+                          </h3>
+                          {callRecord.call.timestamp && (
+                            <span className="text-sm text-muted-foreground flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(callRecord.call.timestamp).toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                          {callRecord.transcript.length > 0 ? (
+                            callRecord.transcript.map((entry, idx) => (
+                              <div
+                                key={idx}
+                                className={`flex ${entry.speaker === 'ai' ? 'justify-start' : 'justify-end'} animate-fade-in`}
+                              >
+                                <div
+                                  className={`max-w-[85%] sm:max-w-[80%] p-3 rounded-lg shadow-sm ${entry.speaker === 'ai'
+                                    ? 'bg-primary/10 border border-primary/20 text-foreground'
+                                    : 'bg-accent/10 border border-accent/20 text-foreground'
+                                    }`}
+                                >
+                                  <div className="flex items-center justify-between mb-1.5 gap-2">
+                                    <span
+                                      className={`text-xs font-semibold ${entry.speaker === 'ai' ? 'text-primary' : 'text-accent'
+                                        }`}
+                                    >
+                                      {entry.speaker === 'ai' ? 'Divya' : safeRender(candidate?.name)}
+                                    </span>
+                                    {entry.timestamp && (
+                                      <span className="text-xs text-muted-foreground">
+                                        {safeRender(entry.timestamp)}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                                    {safeRender(entry.message)}
+                                  </p>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="p-6 bg-secondary/50 rounded-lg flex items-center justify-center space-x-2 text-muted-foreground">
+                              <AlertTriangle className="w-5 h-5" />
+                              <p>No transcript data available for this call.</p>
+                            </div>
+                          )}
+                        </div>
+                      </TabsContent>
+                    ))}
+                  </Tabs>
+                </CardContent>
+              </Card>
+
+              {/* Structured Data for Active Call */}
+              {Object.keys(structuredData).length > 0 && (
+                <Card className="bg-card/50 backdrop-blur-sm border-accent/20">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Hash className="w-4 h-4 text-accent" />
+                      Structured Call Data (Call {calls.findIndex(c => String(c.id) === activeCallId) + 1})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      {Object.entries(structuredData).map(([key, value], i) => (
+                        <div key={i} className="border-b border-border/50 pb-6 last:border-0 last:pb-0">
+                          <div className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider flex items-center gap-2">
+                            <div className="w-1 h-3 bg-accent rounded-full" />
+                            {formatStructuredKey(key)}
+                          </div>
+                          <div className="text-sm pl-3 border-l-2 border-border/30">
+                            {renderStructuredValue(value)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Call Summary */}
+              {callSummary && (
+                <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+                  <CardHeader>
+                    <CardTitle className="text-base">
+                      Call Summary (Call {calls.findIndex(c => String(c.id) === activeCallId) + 1})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="bg-secondary/20 rounded-lg p-4 border border-border/40">
+                      <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">
+                        {callSummary}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          ) : (
+            <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+              <CardContent className="p-12">
+                <div className="flex flex-col items-center justify-center text-muted-foreground">
+                  <MessageSquare className="w-12 h-12 mb-4" />
+                  <p>No call records found for this candidate.</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {

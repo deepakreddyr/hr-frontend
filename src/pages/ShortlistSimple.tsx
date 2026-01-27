@@ -71,6 +71,7 @@ const ShortlistForm = () => {
     resumeLink: "",
     numCandidates: 5,
     jdFile: null as File | null,
+    noticePeriod: "",
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -92,7 +93,7 @@ const ShortlistForm = () => {
             headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
           });
           const data = await response.json();
-          
+
           if (data.success) {
             setTaskOptions(data.tasks || []);
           } else {
@@ -118,7 +119,7 @@ const ShortlistForm = () => {
     if (!selectedTaskId || sourceType !== 'task') return;
 
     const selectedTask = taskOptions.find(task => task.id.toString() === selectedTaskId);
-    
+
     if (selectedTask) {
       // Map task fields to form fields based on your database schema
       setFormData(prev => ({
@@ -184,22 +185,22 @@ const ShortlistForm = () => {
         navigate(`/results/${data.search_id}`);
       } else {
         toast({
-        title: "No candidates shortlisted",
-        description:
-          data.message + " Try again with updated job/resume data.",
-        variant: "destructive", // red styling if using shadcn
-        duration: Infinity,
-      });
+          title: "No candidates shortlisted",
+          description:
+            data.message + " Try again with updated job/resume data.",
+          variant: "destructive", // red styling if using shadcn
+          duration: Infinity,
+        });
         setSubmitting(false);
       }
     } catch (err) {
       console.error(err);
       toast({
-      title: "Error submitting form",
-      description: "Something went wrong. Please try again.",
-      variant: "destructive",
-      duration: Infinity,
-    });
+        title: "Error submitting form",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+        duration: Infinity,
+      });
       setSubmitting(false);
     }
   };
@@ -217,6 +218,7 @@ const ShortlistForm = () => {
       resumeLink: "",
       numCandidates: 5,
       jdFile: null,
+      noticePeriod: "",
     });
     setSelectedTaskId(null);
     setSourceType('blank');
@@ -266,14 +268,14 @@ const ShortlistForm = () => {
                 <label className="block text-sm font-medium text-foreground mb-2">
                   Select Task
                 </label>
-                <Select 
-                  value={selectedTaskId || ''} 
+                <Select
+                  value={selectedTaskId || ''}
                   onValueChange={setSelectedTaskId}
                   disabled={loadingTasks}
                 >
                   <SelectTrigger>
-                    <SelectValue 
-                      placeholder={loadingTasks ? 'Loading tasks...' : 'Select a task'} 
+                    <SelectValue
+                      placeholder={loadingTasks ? 'Loading tasks...' : 'Select a task'}
                     />
                   </SelectTrigger>
                   <SelectContent>
@@ -293,7 +295,7 @@ const ShortlistForm = () => {
               </div>
             )}
           </div>
-        </CardContent>  
+        </CardContent>
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -426,11 +428,35 @@ const ShortlistForm = () => {
               placeholder="Eg. 5"
             />
 
+            {/* Notice Period */}
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-foreground">
+                Notice Period
+              </label>
+              <Select
+                value={formData.noticePeriod}
+                onValueChange={(val) =>
+                  setFormData({ ...formData, noticePeriod: val })
+                }
+                required
+              >
+                <SelectTrigger className="bg-background/50 border-primary/30 focus:border-primary focus:ring-primary/20">
+                  <SelectValue placeholder="Select notice period" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="2 weeks">2 Weeks</SelectItem>
+                  <SelectItem value="1 month">1 Month</SelectItem>
+                  <SelectItem value="2 months">2 Months</SelectItem>
+                  <SelectItem value="3 months">3 Months</SelectItem>
+                  <SelectItem value="more">More than 3 Months</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Drag & Drop JD Upload */}
             <div
-              className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition ${
-                dragOver ? "border-primary bg-primary/10" : "border-muted"
-              }`}
+              className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition ${dragOver ? "border-primary bg-primary/10" : "border-muted"
+                }`}
               onDragOver={(e) => {
                 e.preventDefault();
                 setDragOver(true);
@@ -454,6 +480,7 @@ const ShortlistForm = () => {
                 accept=".pdf"
                 className="hidden"
                 onChange={handleFileChange}
+                required
               />
             </div>
           </CardContent>
