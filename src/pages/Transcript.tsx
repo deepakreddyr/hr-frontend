@@ -730,7 +730,7 @@ const Transcript: React.FC = () => {
                                 >
                                   <div className="flex items-center justify-between mb-1.5 gap-2">
                                     <span
-                                      className={`text-xs font-semibold ${entry.speaker === 'ai' ? 'text-primary' : 'text-accent'
+                                      className={`text-xs font-semibold ${entry.speaker === 'ai' ? 'text-primary' : 'text-white'
                                         }`}
                                     >
                                       {entry.speaker === 'ai' ? 'Divya' : safeRender(candidate?.name)}
