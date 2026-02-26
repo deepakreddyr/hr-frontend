@@ -89,7 +89,7 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-        <DashboardSkeleton />
+      <DashboardSkeleton />
     );
   }
 
@@ -99,7 +99,7 @@ const Dashboard = () => {
         <div className="text-red-500 mb-4">{error}</div>
         <button
           onClick={() => window.location.reload()}
-          className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90"
+          className="bg-primary text-primary-foreground border border-border px-4 py-2 rounded-full hover:opacity-90 transition"
         >
           Retry
         </button>
@@ -239,22 +239,19 @@ const Dashboard = () => {
       </div>
 
       {/* Chatbot Section */}
-      <div className="bg-card border border-border rounded-lg p-6">
-        <h3 className="text-xl font-semibold text-foreground mb-4">AI Assistant</h3>
-        <div className="bg-secondary/30 border border-dashed border-primary/30 rounded-lg p-8 text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-primary to-accent rounded-full mx-auto mb-4 flex items-center justify-center animate-pulse-glow">
-            <SearchIcon className="w-8 h-8 text-white" />
-          </div>
-          <h4 className="text-lg font-medium text-foreground mb-2">
-            Chat with TheHireAI (Coming Soon!)
-          </h4>
-          <p className="text-muted-foreground mb-4">
-            Get instant help with your recruitment tasks
-          </p>
-          <button className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg transition-colors">
-            Start Conversation
-          </button>
+      <div className="glass-card rounded-2xl p-8 text-center animate-slide-up" style={{ animationDelay: '0.4s' }}>
+        <div className="w-20 h-20 bg-primary rounded-full mx-auto mb-6 flex items-center justify-center shadow-sm">
+          <SearchIcon className="w-10 h-10 text-primary-foreground" />
         </div>
+        <h4 className="text-2xl font-bold text-foreground mb-3">
+          AI Recruitment Assistant
+        </h4>
+        <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+          Get instant help with your candidate pipeline, shortlist analysis, and recruitment workflow.
+        </p>
+        <button className="btn-secondary min-w-[240px] mx-auto opacity-70 cursor-not-allowed">
+          Coming Soon
+        </button>
       </div>
     </div>
   );

@@ -40,11 +40,12 @@ const Billing = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    axios.get(`${import.meta.env.VITE_API_URL}/api/billing-data`, { 
+    axios.get(`${import.meta.env.VITE_API_URL}/api/billing-data`, {
       headers: {
-          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-          "Content-Type": "application/json",
-        }, })
+        "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+        "Content-Type": "application/json",
+      },
+    })
       .then((res) => {
         const data = res.data;
         setCurrentCredits(data.current_credits || 0);
@@ -91,7 +92,7 @@ const Billing = () => {
               Add Credits
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-card/95 backdrop-blur-sm border-border/50">
+          <DialogContent className="bg-card/95 backdrop-blur-sm border-border">
             <DialogHeader>
               <DialogTitle>Add Credits</DialogTitle>
               <DialogDescription>Choose a credit package to add to your account</DialogDescription>
@@ -120,7 +121,7 @@ const Billing = () => {
       </div>
 
       {/* Credits Counter */}
-      <Card className="bg-gradient-to-r from-primary/20 to-accent/20 backdrop-blur-sm border-primary/30 glow-primary">
+      <Card className="bg-gradient-to-r from-primary/20 to-accent/20 backdrop-blur-sm border-border glow-primary">
         <CardContent className="p-8">
           <div className="flex items-center justify-center space-x-4">
             <CreditCard className="w-12 h-12 text-primary" />
@@ -134,7 +135,7 @@ const Billing = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Credit Usage */}
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+        <Card className="bg-card/50 backdrop-blur-sm border-border">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <History className="w-5 h-5" />
@@ -164,7 +165,7 @@ const Billing = () => {
         </Card>
 
         {/* Payment History */}
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+        <Card className="bg-card/50 backdrop-blur-sm border-border">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <span>Payment History</span>

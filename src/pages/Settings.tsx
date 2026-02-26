@@ -32,11 +32,12 @@ const Settings = () => {
 
   // Fetch settings on load
   useEffect(() => {
-    axios.get(`${import.meta.env.VITE_API_URL}/api/settings`, { 
+    axios.get(`${import.meta.env.VITE_API_URL}/api/settings`, {
       headers: {
-          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-          "Content-Type": "application/json",
-        }, })
+        "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+        "Content-Type": "application/json",
+      },
+    })
       .then(res => {
         const data = res.data;
         setSettings({
@@ -55,10 +56,12 @@ const Settings = () => {
     axios.post(`${import.meta.env.VITE_API_URL}/api/settings`, {
       ...settings,
       darkTheme: isDark
-    }, {  headers: {
-          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-          "Content-Type": "application/json",
-        },})
+    }, {
+      headers: {
+        "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+        "Content-Type": "application/json",
+      },
+    })
       .then(() => console.log("Settings saved"))
       .catch(err => console.error("Failed to save settings:", err));
   };
@@ -78,9 +81,9 @@ const Settings = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Appearance Settings */}
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 animate-slide-up">
+        <Card className="bg-card shadow-sm border-border hover:border-primary transition-all duration-300 animate-slide-up">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
+            <CardTitle className="flex items-center space-x-2 text-foreground">
               <Palette className="w-5 h-5" />
               <span>Appearance</span>
             </CardTitle>
@@ -92,9 +95,9 @@ const Settings = () => {
                 {isDark ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-primary" />}
                 <div>
                   <Label className="text-foreground font-medium">
-                    {isDark ? 'Dark Mode' : 'Light Mode'}
+                    {isDark ? 'Dark Mode' : 'Lite Mode'}
                   </Label>
-                  <p className="text-muted-foreground text-sm">Toggle between dark and light theme</p>
+                  <p className="text-muted-foreground text-sm">Toggle between dark and lite theme</p>
                 </div>
               </div>
               <Switch
@@ -159,7 +162,7 @@ const Settings = () => {
         */}
 
         {/* Notification Settings */}
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 lg:col-span-2 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+        <Card className="bg-card/50 backdrop-blur-sm border-border hover:border-primary transition-all duration-300 lg:col-span-2 animate-slide-up" style={{ animationDelay: '0.2s' }}>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Bell className="w-5 h-5" />

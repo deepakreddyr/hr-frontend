@@ -53,7 +53,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ mode, onCreateNewTask }) => {
       });
 
       const data = await response.json();
-      console.log(data,"DATA");
+      console.log(data, "DATA");
       if (!response.ok) {
         toast.error(data.error || "Failed to load tasks");
         return;
@@ -191,7 +191,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ mode, onCreateNewTask }) => {
   const getTaskUrgency = (deadline: string, priority: string) => {
     if (isManager) return "normal";
     try {
-      const diffDays = Math.ceil((new Date(deadline).getTime() - new Date().getTime()) / (1000*60*60*24));
+      const diffDays = Math.ceil((new Date(deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
       if (diffDays < 0) return "overdue";
       if (diffDays <= 1 && priority === "High") return "urgent";
       if (diffDays <= 3 && priority === "High") return "soon";
@@ -210,7 +210,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ mode, onCreateNewTask }) => {
     }
   };
 
-  const filteredTasks = !isManager && statusFilter !== "All" 
+  const filteredTasks = !isManager && statusFilter !== "All"
     ? tasks.filter(task => task.status === statusFilter)
     : tasks;
 
@@ -234,9 +234,8 @@ const TaskManager: React.FC<TaskManagerProps> = ({ mode, onCreateNewTask }) => {
             <button
               key={status}
               onClick={() => setStatusFilter(status as typeof statusFilter)}
-              className={`px-3 py-1 rounded-full text-sm font-medium transition ${
-                statusFilter === status ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
+              className={`px-3 py-1 rounded-full text-sm font-medium transition ${statusFilter === status ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
             >
               {status} ({tasks.filter(t => status === "All" || t.status === status).length})
             </button>
@@ -312,8 +311,8 @@ const TaskManager: React.FC<TaskManagerProps> = ({ mode, onCreateNewTask }) => {
 
       <div ref={taskListRef} className="space-y-4">
         {filteredTasks.map(task => (
-          <div key={task.id} className={`bg-white dark:bg-gray-900 rounded-2xl shadow transition overflow-hidden ${getTaskBorderClass(task.deadline, task.priority)}`}>
-            <div className="p-5 flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800" onClick={() => toggleExpand(task.id)}>
+          <div key={task.id} className={`bg-card rounded-2xl border border-border transition overflow-hidden shadow-sm ${getTaskBorderClass(task.deadline, task.priority)}`}>
+            <div className="p-5 flex justify-between items-center cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => toggleExpand(task.id)}>
               <div>
                 <h2 className="text-lg font-semibold">
                   {task.job_role} {isManager ? `(Assigned to: ${task.assignee || "-"})` : `(Assigned by: ${task.assignor || "-"})`}
@@ -328,7 +327,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ mode, onCreateNewTask }) => {
             </div>
 
             <div ref={el => (contentRefs.current[task.id] = el)} className="px-5 overflow-hidden">
-              <div className="py-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="py-4 border-t border-border">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <p className="detail-item"><strong>📍 Location:</strong> {task.job_location}</p>
                   <p className="detail-item"><strong>💰 CTC:</strong> {task.ctc_range}</p>

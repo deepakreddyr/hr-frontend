@@ -8,12 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import CandidateFormModal from '@/components/CandidateFormModal'; 
+import CandidateFormModal from '@/components/CandidateFormModal';
 
 const toast = {
-    success: (message: string) => console.log(`TOAST SUCCESS: ${message}`),
-    error: (message: string) => console.error(`TOAST ERROR: ${message}`),
-    warning: (message: string) => console.warn(`TOAST WARNING: ${message}`),
+  success: (message: string) => console.log(`TOAST SUCCESS: ${message}`),
+  error: (message: string) => console.error(`TOAST ERROR: ${message}`),
+  warning: (message: string) => console.warn(`TOAST WARNING: ${message}`),
 };
 
 interface Candidate {
@@ -34,16 +34,16 @@ interface Candidate {
   match_score: number;
   summary: string;
   call_status: string;
-  company?: string; 
+  company?: string;
 }
 
 const Results: React.FC = () => {
   const { searchId } = useParams<{ searchId: string }>();
   const navigate = useNavigate();
-  const [candidates, setCandidates] = useState<Candidate[]>([]); 
-  const [filter, setFilter] = useState('all'); 
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCandidates, setSelectedCandidates] = useState<number[]>([]); 
+  const [selectedCandidates, setSelectedCandidates] = useState<number[]>([]);
   const [sortBy, setSortBy] = useState('match_score');
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -58,9 +58,9 @@ const Results: React.FC = () => {
   const [showCustomQuestionModal, setShowCustomQuestionModal] = useState(false);
   const [customQuestion, setCustomQuestion] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedOptions, setGeneratedOptions] = useState<string[]>([]); 
-  const [savedCustomQuestion, setSavedCustomQuestion] = useState(''); 
-  
+  const [generatedOptions, setGeneratedOptions] = useState<string[]>([]);
+  const [savedCustomQuestion, setSavedCustomQuestion] = useState('');
+
   // State for CandidateFormModal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [candidateToEditId, setCandidateToEditId] = useState<number | null>(null);
@@ -78,12 +78,12 @@ const Results: React.FC = () => {
 
   // --- MODAL HANDLERS ---
   const handleOpenAddModal = () => {
-    setCandidateToEditId(null); 
+    setCandidateToEditId(null);
     setIsModalOpen(true);
   };
 
   const handleOpenEditModal = (candidateId: number) => {
-    setCandidateToEditId(candidateId); 
+    setCandidateToEditId(candidateId);
     setIsModalOpen(true);
   };
 
@@ -95,10 +95,10 @@ const Results: React.FC = () => {
   const handleCandidateSuccess = (newOrUpdatedCandidate: Candidate) => {
     setCandidates(prev => {
       const existingIndex = prev.findIndex(c => c.id === newOrUpdatedCandidate.id);
-      
+
       if (existingIndex !== -1) {
         // Update existing candidate
-        return prev.map((c, index) => 
+        return prev.map((c, index) =>
           index === existingIndex ? newOrUpdatedCandidate : c
         );
       } else {
@@ -128,38 +128,38 @@ const Results: React.FC = () => {
 
   const handleConfirmDelete = async () => {
     const { candidateId, candidateName } = deleteConfirmation;
-    
+
     if (!candidateId) return;
 
     try {
-        const token = localStorage.getItem("access_token");
-        await axios.delete(`${import.meta.env.VITE_API_URL}/api/candidate`, {
-            headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-            data: { 
-                candidate_id: candidateId 
-            }
-        });
+      const token = localStorage.getItem("access_token");
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/candidate`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        data: {
+          candidate_id: candidateId
+        }
+      });
 
-        toast.success(`Candidate ${candidateName} deleted successfully.`);
-        
-        // Remove the candidate from the local state
-        setCandidates(prev => prev.filter(c => c.id !== candidateId));
-        
-        // Update stats 
-        setStats(prev => ({
-            ...prev,
-            total: prev.total > 0 ? prev.total - 1 : 0,
-            shortlisted: prev.shortlisted > 0 ? prev.shortlisted - 1 : 0
-        }));
+      toast.success(`Candidate ${candidateName} deleted successfully.`);
+
+      // Remove the candidate from the local state
+      setCandidates(prev => prev.filter(c => c.id !== candidateId));
+
+      // Update stats 
+      setStats(prev => ({
+        ...prev,
+        total: prev.total > 0 ? prev.total - 1 : 0,
+        shortlisted: prev.shortlisted > 0 ? prev.shortlisted - 1 : 0
+      }));
 
     } catch (error: any) {
-        console.error("Failed to delete candidate:", error);
-        toast.error(`Failed to delete candidate: ${error.response?.data?.error || "Server error"}`);
+      console.error("Failed to delete candidate:", error);
+      toast.error(`Failed to delete candidate: ${error.response?.data?.error || "Server error"}`);
     } finally {
-        setDeleteConfirmation({ show: false, candidateId: null, candidateName: '' });
+      setDeleteConfirmation({ show: false, candidateId: null, candidateName: '' });
     }
   };
 
@@ -179,19 +179,19 @@ const Results: React.FC = () => {
         "Authorization": `Bearer ${token}`,
         "Content-Type": "application/json",
       };
-      
+
       try {
         // 1. Fetch Candidates
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/results?searchID=${searchId}`, { headers });
-        
+
         const fetchedCandidates: Candidate[] = (res.data.candidates || []).map((c: any) => ({
-             ...c,
-             match_score: parseFloat(c.match_score) || 0,
-             // Ensure experience fields are strings
-             total_experience: c.totalExp ? String(c.totalExp) : '',
-             relevant_work_experience: c.relevantExp ? String(c.relevantExp) : '',
+          ...c,
+          match_score: parseFloat(c.match_score) || 0,
+          // Ensure experience fields are strings
+          total_experience: c.totalExp ? String(c.totalExp) : '',
+          relevant_work_experience: c.relevantExp ? String(c.relevantExp) : '',
         }));
-        
+
         setCandidates(fetchedCandidates);
         setStats({
           shortlisted: res.data.total,
@@ -199,7 +199,7 @@ const Results: React.FC = () => {
           rescheduled: res.data.rescheduled_calls,
           total: res.data.total
         });
-        
+
         // 2. Fetch Saved Custom Question 
         const questionRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/custom-question?search_id=${searchId}`, { headers });
         if (questionRes.data.success) {
@@ -223,7 +223,7 @@ const Results: React.FC = () => {
         candidate.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         candidate.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         candidate.skills.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       if (!matchesSearch) return false;
 
       switch (filter) {
@@ -231,11 +231,11 @@ const Results: React.FC = () => {
           return candidate.liked;
         case 'high-match':
           return candidate.match_score >= 90;
-        case 'Called & Answered': 
+        case 'Called & Answered':
           return candidate.call_status === 'Called & Answered';
-        case 'Re-schedule': 
+        case 'Re-schedule':
           return candidate.call_status === 'Re-schedule';
-        case 'not_called': 
+        case 'not_called':
           return candidate.call_status === 'not_called';
         case 'all':
         default:
@@ -267,9 +267,9 @@ const Results: React.FC = () => {
 
   const handleSelectAll = () => {
     const filteredIds = filteredCandidates.map(c => c.id);
-    const allFilteredSelected = filteredIds.length > 0 && 
-                                filteredIds.every(id => selectedCandidates.includes(id));
-    
+    const allFilteredSelected = filteredIds.length > 0 &&
+      filteredIds.every(id => selectedCandidates.includes(id));
+
     if (allFilteredSelected) {
       // Deselect all filtered candidates
       setSelectedCandidates(prev => prev.filter(id => !filteredIds.includes(id)));
@@ -292,10 +292,12 @@ const Results: React.FC = () => {
       await axios.post(`${import.meta.env.VITE_API_URL}/api/like-candidate`, {
         candidate_id: candidateId,
         liked: !currentLiked
-      },{headers: {
+      }, {
+        headers: {
           "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
           "Content-Type": "application/json",
-        }},);
+        }
+      },);
       setCandidates(prev =>
         prev.map(c => (c.id === candidateId ? { ...c, liked: !currentLiked } : c))
       );
@@ -307,7 +309,7 @@ const Results: React.FC = () => {
 
   const handleAddToFinalSelects = async () => {
     const selectedFiltered = getSelectedFilteredCandidates();
-    
+
     if (selectedFiltered.length === 0) {
       toast.warning("No candidates selected from the current filtered view.");
       return;
@@ -316,16 +318,18 @@ const Results: React.FC = () => {
     try {
       await axios.post(`${import.meta.env.VITE_API_URL}/api/add-final-select`, {
         candidate_ids: selectedFiltered.map(c => c.id)
-      },{headers: {
+      }, {
+        headers: {
           "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
           "Content-Type": "application/json",
-        }},);
+        }
+      },);
       setShowFinalSuccess(true);
       setTimeout(() => {
         setShowFinalSuccess(false);
       }, 3000);
       toast.success(`${selectedFiltered.length} candidates added to Final Selects.`);
-      
+
       setSelectedCandidates([]);
     } catch (error) {
       console.error("Failed to add to final selects:", error);
@@ -334,8 +338,8 @@ const Results: React.FC = () => {
   };
 
   const handleAddCustomQuestion = () => {
-    setCustomQuestion(savedCustomQuestion); 
-    setGeneratedOptions([]); 
+    setCustomQuestion(savedCustomQuestion);
+    setGeneratedOptions([]);
     setShowCustomQuestionModal(true);
   };
 
@@ -354,11 +358,11 @@ const Results: React.FC = () => {
           "Content-Type": "application/json",
         },
       });
-      
+
       if (res.data.success && res.data.questions && res.data.questions.length > 0) {
-        setGeneratedOptions(res.data.questions); 
+        setGeneratedOptions(res.data.questions);
         if (!customQuestion.trim()) {
-            setCustomQuestion(res.data.questions[0]);
+          setCustomQuestion(res.data.questions[0]);
         }
         toast.success("AI questions generated successfully. Please select one or edit the text box.");
       } else {
@@ -377,11 +381,11 @@ const Results: React.FC = () => {
       toast.warning("Please enter or select a question to save.");
       return;
     }
-    
+
     const token = localStorage.getItem("access_token");
     if (!token) {
-        toast.error("Authentication error. Please log in again.");
-        return;
+      toast.error("Authentication error. Please log in again.");
+      return;
     }
 
     try {
@@ -394,12 +398,12 @@ const Results: React.FC = () => {
           "Content-Type": "application/json",
         }
       });
-      
+
       toast.success("Custom question saved successfully!");
-      setSavedCustomQuestion(customQuestion); 
+      setSavedCustomQuestion(customQuestion);
       setShowCustomQuestionModal(false);
-      setCustomQuestion(''); 
-      setGeneratedOptions([]); 
+      setCustomQuestion('');
+      setGeneratedOptions([]);
 
     } catch (error: any) {
       console.error("Failed to save custom question", error.response?.data || error.message);
@@ -413,47 +417,47 @@ const Results: React.FC = () => {
 
   const handleExportCandidates = () => {
     if (filteredCandidates.length === 0) {
-        toast.warning("No candidates in the current filtered view to export.");
-        return;
+      toast.warning("No candidates in the current filtered view to export.");
+      return;
     }
 
     try {
-        const headers = [
-            "Name", "Email", "Phone", "Total Exp", "Relevant Exp", "Match Score (%)", "Call Status", "Liked", "Skills"
-        ];
-        
-        const csvRows = filteredCandidates.map(c => [
-            `"${c.name.replace(/"/g, '""')}"`, 
-            `"${c.email.replace(/"/g, '""')}"`, 
-            `"${c.phone.replace(/"/g, '""')}"`, 
-            c.total_experience || '-', 
-            c.relevant_work_experience || '-', 
-            c.match_score,
-            `"${c.call_status.replace(/"/g, '""')}"`,
-            c.liked ? 'Yes' : 'No',
-            `"${c.skills.replace(/"/g, '""')}"`
-        ].join(','));
+      const headers = [
+        "Name", "Email", "Phone", "Total Exp", "Relevant Exp", "Match Score (%)", "Call Status", "Liked", "Skills"
+      ];
 
-        const csvString = [
-            headers.join(','),
-            ...csvRows
-        ].join('\n');
+      const csvRows = filteredCandidates.map(c => [
+        `"${c.name.replace(/"/g, '""')}"`,
+        `"${c.email.replace(/"/g, '""')}"`,
+        `"${c.phone.replace(/"/g, '""')}"`,
+        c.total_experience || '-',
+        c.relevant_work_experience || '-',
+        c.match_score,
+        `"${c.call_status.replace(/"/g, '""')}"`,
+        c.liked ? 'Yes' : 'No',
+        `"${c.skills.replace(/"/g, '""')}"`
+      ].join(','));
 
-        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `Search_${searchId}_Candidates_Export.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+      const csvString = [
+        headers.join(','),
+        ...csvRows
+      ].join('\n');
 
-        toast.success(`Exported ${filteredCandidates.length} candidates to CSV.`);
+      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Search_${searchId}_Candidates_Export.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success(`Exported ${filteredCandidates.length} candidates to CSV.`);
 
     } catch (error) {
-        console.error("Export failed:", error);
-        toast.error("Failed to export candidate data.");
+      console.error("Export failed:", error);
+      toast.error("Failed to export candidate data.");
     }
   };
 
@@ -466,10 +470,12 @@ const Results: React.FC = () => {
         skills: candidate.skills,
         company: candidate.company || '',
         candidate_id: candidate.id,
-      },{headers: {
-            "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-            "Content-Type": "application/json",
-          }}, );
+      }, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        }
+      },);
       setCallSuccessName(candidate.name);
       setShowCallSuccess(true);
       setTimeout(() => {
@@ -484,7 +490,7 @@ const Results: React.FC = () => {
 
   const handleCallSelectedCandidates = async () => {
     const selectedFiltered = getSelectedFilteredCandidates();
-    
+
     if (selectedFiltered.length === 0) {
       toast.warning("No candidates selected from the current filtered view.");
       return;
@@ -498,21 +504,23 @@ const Results: React.FC = () => {
         company: c.company || '',
         candidate_id: c.id
       }));
-      
+
       await axios.post(`${import.meta.env.VITE_API_URL}/api/call`, {
         search_id: searchId,
         candidates: payload
-      },{headers: {
-            "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-            "Content-Type": "application/json",
-          },});
-      
+      }, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        },
+      });
+
       setShowCallSuccess(true);
       setTimeout(() => {
         setShowCallSuccess(false);
       }, 3000);
       toast.success(`${selectedFiltered.length} calls initiated successfully.`);
-      
+
       setSelectedCandidates([]);
     } catch (error) {
       console.error("Failed to call selected candidates", error);
@@ -534,14 +542,16 @@ const Results: React.FC = () => {
         company: c.company || '',
         candidate_id: c.id
       }));
-      
+
       await axios.post(`${import.meta.env.VITE_API_URL}/api/call`, {
         search_id: searchId,
         candidates: payload
-      },{headers: {
-            "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-            "Content-Type": "application/json",
-          },});
+      }, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        },
+      });
       toast.success(`Calls initiated for all ${filteredCandidates.length} filtered candidates.`);
     } catch (error) {
       console.error("Failed to call all candidates", error);
@@ -555,7 +565,7 @@ const Results: React.FC = () => {
       case 'Re-schedule': return 'text-yellow-400 bg-yellow-400/20';
       case 'scheduled': return 'text-blue-400 bg-blue-400/20';
       case 'failed': return 'text-red-400 bg-red-400/20';
-      case 'not_called': 
+      case 'not_called':
       default: return 'text-gray-400 bg-gray-400/20';
     }
   };
@@ -585,15 +595,16 @@ const Results: React.FC = () => {
             <p className="text-muted-foreground">Search #{searchId}</p>
           </div>
           <div className="flex items-center space-x-3">
-            <Button onClick={handleOpenAddModal} className="bg-primary hover:bg-primary/90 text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Candidate
+            <Button onClick={handleOpenAddModal} className="btn-theme-inverse">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Candidate
             </Button>
-            <Button onClick={handleViewFinalSelects} className="bg-accent hover:bg-accent/90 text-white glow-accent">
+            <Button onClick={handleViewFinalSelects} className="btn-secondary">
               <UserCheck className="w-4 h-4 mr-2" />
               View Final Selects
             </Button>
           </div>
+
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[
@@ -602,20 +613,21 @@ const Results: React.FC = () => {
             { label: "Re-Scheduled", value: 0, icon: <Phone />, color: "yellow-400" },
             { label: "Total Found", value: 0, icon: <Star />, color: "accent" }
           ].map((stat, idx) => (
-            <Card key={idx} className={`bg-card/50 backdrop-blur-sm border-primary/20`}>
+            <Card key={idx} className="glass-card">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">{stat.label}</p>
-                    <p className={`text-2xl font-bold text-white`}>{stat.value}</p> 
+                    <p className="text-2xl font-bold text-foreground">{stat.value}</p>
                   </div>
-                  <div className={`w-8 h-8 text-primary`}>{stat.icon}</div>
+                  <div className="w-8 h-8 text-primary">{stat.icon}</div>
                 </div>
               </CardContent>
             </Card>
           ))}
+
         </div>
-        <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+        <Card className="bg-card/50 backdrop-blur-sm border-border">
           <CardContent className="p-12">
             <div className="text-center space-y-6">
               <div className="w-16 h-16 bg-muted/20 rounded-full flex items-center justify-center mx-auto">
@@ -631,19 +643,19 @@ const Results: React.FC = () => {
           </CardContent>
         </Card>
         <CandidateFormModal
-            isOpen={isModalOpen}
-            onClose={handleCloseModal}
-            candidateId={candidateToEditId} 
-            searchId={Number(searchId)}
-            onSuccess={handleCandidateSuccess}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          candidateId={candidateToEditId}
+          searchId={Number(searchId)}
+          onSuccess={handleCandidateSuccess}
         />
       </div>
     );
   }
 
   const selectedFilteredCount = getSelectedFilteredCandidates().length;
-  const allFilteredSelected = filteredCandidates.length > 0 && 
-                              filteredCandidates.every(c => selectedCandidates.includes(c.id));
+  const allFilteredSelected = filteredCandidates.length > 0 &&
+    filteredCandidates.every(c => selectedCandidates.includes(c.id));
 
   return (
     <div className="space-y-6">
@@ -656,21 +668,21 @@ const Results: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button onClick={handleOpenAddModal} className="bg-primary hover:bg-primary/90 text-white">
+          <Button onClick={handleOpenAddModal} className="btn-theme-inverse">
             <Plus className="w-4 h-4 mr-2" />
             Add Candidate
           </Button>
-          <Button onClick={handleAddCustomQuestion} className="bg-accent hover:bg-accent/90 text-white glow-accent">
-            {savedCustomQuestion ? 'Edit Custom Question' : 'Add Custom Question'}            
+          <Button onClick={handleAddCustomQuestion} className="btn-theme-inverse">
+            {savedCustomQuestion ? 'Edit Custom Question' : 'Add Custom Question'}
           </Button>
-          <Button onClick={handleViewFinalSelects} className="bg-accent hover:bg-accent/90 text-white glow-accent">
+          <Button onClick={handleViewFinalSelects} className="btn-theme-inverse">
             <UserCheck className="w-4 h-4 mr-2" />
             View Final Selects
           </Button>
-          <Button 
-            onClick={handleExportCandidates} 
-            variant="outline" 
-            className="border-primary/30 hover:bg-primary/10"
+          <Button
+            onClick={handleExportCandidates}
+            variant="outline"
+            className="btn-secondary"
           >
             <Download className="w-4 h-4 mr-2" />
             Export
@@ -686,18 +698,19 @@ const Results: React.FC = () => {
           { label: "Re-Scheduled", value: stats.rescheduled, icon: <Phone />, color: "yellow-400" },
           { label: "Total Found", value: stats.total, icon: <Star />, color: "accent" }
         ].map((stat, idx) => (
-          <Card key={idx} className={`bg-card/50 backdrop-blur-sm border-primary/20`}>
+          <Card key={idx} className="glass-card hover-glow">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{stat.label}</p>
-                  <p className={`text-2xl font-bold text-white`}>{stat.value}</p> 
+                  <p className="text-2xl font-bold text-foreground">{stat.value}</p>
                 </div>
-                <div className={`w-8 h-8 text-primary`}>{stat.icon}</div>
+                <div className="w-8 h-8 text-primary">{stat.icon}</div>
               </div>
             </CardContent>
           </Card>
         ))}
+
       </div>
 
       {/* Filter/Sort/Search Bar */}
@@ -710,7 +723,7 @@ const Results: React.FC = () => {
                 <select
                   value={filter}
                   onChange={(e) => setFilter(e.target.value)}
-                  className="bg-background border border-primary/30 rounded-lg px-3 py-2 text-foreground"
+                  className="bg-background border border-border rounded-lg px-3 py-2 text-foreground"
                 >
                   <option value="all">All Candidates</option>
                   <option value="liked">Liked Only</option>
@@ -725,7 +738,7 @@ const Results: React.FC = () => {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="bg-background border border-primary/30 rounded-lg px-3 py-2 text-foreground"
+                  className="bg-background border border-border rounded-lg px-3 py-2 text-foreground"
                 >
                   <option value="match_score">Sort by Match Score</option>
                   <option value="name">Sort by Name</option>
@@ -739,7 +752,7 @@ const Results: React.FC = () => {
                 placeholder="Search candidates..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-background border-primary/30"
+                className="pl-10 bg-background border-border"
               />
             </div>
           </div>
@@ -803,23 +816,23 @@ const Results: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-muted-foreground">{candidate.email}</TableCell>
                     <TableCell className="text-muted-foreground">{candidate.phone}</TableCell>
-                    
+
                     {/* FIXED: Display experience properly, checking for '0', null, undefined, and empty string */}
                     <TableCell>
-                      {candidate.total_experience && 
-                       candidate.total_experience !== '0' && 
-                       candidate.total_experience.trim() !== '' 
-                        ? `${candidate.total_experience} yrs` 
+                      {candidate.total_experience &&
+                        candidate.total_experience !== '0' &&
+                        candidate.total_experience.trim() !== ''
+                        ? `${candidate.total_experience} yrs`
                         : '-'}
                     </TableCell>
                     <TableCell>
-                      {candidate.relevant_work_experience && 
-                       candidate.relevant_work_experience !== '0' && 
-                       candidate.relevant_work_experience.trim() !== '' 
-                        ? `${candidate.relevant_work_experience} yrs` 
+                      {candidate.relevant_work_experience &&
+                        candidate.relevant_work_experience !== '0' &&
+                        candidate.relevant_work_experience.trim() !== ''
+                        ? `${candidate.relevant_work_experience} yrs`
                         : '-'}
                     </TableCell>
-                    
+
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-sm font-medium ${getMatchScoreColor(candidate.match_score)}`}>
                         {candidate.match_score}%
@@ -832,23 +845,23 @@ const Results: React.FC = () => {
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center space-x-2">
-                         {/* EDIT CANDIDATE BUTTON */}
-                         <button
-                            onClick={() => handleOpenEditModal(candidate.id)}
-                            className="p-1 hover:bg-primary/10 rounded"
-                            title="Edit Candidate"
-                          >
-                            <Edit3 className="w-4 h-4 text-blue-400" />
-                          </button>
-                        
-                         {/* DELETE CANDIDATE BUTTON - Now with confirmation */}
-                         <button
-                            onClick={() => handleDeleteClick(candidate.id, candidate.name)}
-                            className="p-1 hover:bg-red-400/10 rounded"
-                            title="Delete Candidate"
-                          >
-                            <Trash2 className="w-4 h-4 text-red-400" />
-                          </button>
+                        {/* EDIT CANDIDATE BUTTON */}
+                        <button
+                          onClick={() => handleOpenEditModal(candidate.id)}
+                          className="p-1 hover:bg-primary/10 rounded"
+                          title="Edit Candidate"
+                        >
+                          <Edit3 className="w-4 h-4 text-blue-400" />
+                        </button>
+
+                        {/* DELETE CANDIDATE BUTTON - Now with confirmation */}
+                        <button
+                          onClick={() => handleDeleteClick(candidate.id, candidate.name)}
+                          className="p-1 hover:bg-red-400/10 rounded"
+                          title="Delete Candidate"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-400" />
+                        </button>
 
                         <Button
                           size="sm"
@@ -863,9 +876,8 @@ const Results: React.FC = () => {
                           className="p-1 hover:bg-accent/10 rounded"
                         >
                           <Heart
-                            className={`w-4 h-4 ${
-                              candidate.liked ? 'text-red-400 fill-current' : 'text-muted-foreground'
-                            }`}
+                            className={`w-4 h-4 ${candidate.liked ? 'text-red-400 fill-current' : 'text-muted-foreground'
+                              }`}
                           />
                         </button>
                       </div>
@@ -890,7 +902,7 @@ const Results: React.FC = () => {
               <Button
                 disabled={selectedFilteredCount === 0}
                 variant="outline"
-                className="border-primary/30 hover:bg-primary/10"
+                className="border-border hover:bg-primary/10"
                 onClick={handleCallSelectedCandidates}
               >
                 <Phone className="w-4 h-4 mr-2" />
@@ -901,23 +913,24 @@ const Results: React.FC = () => {
               <Button
                 onClick={handleAddToFinalSelects}
                 disabled={selectedFilteredCount === 0}
-                className="bg-accent hover:bg-accent/90 glow-accent"
+                className="btn-theme-inverse"
               >
                 <UserCheck className="w-4 h-4 mr-2" />
                 Add to Final Selects ({selectedFilteredCount})
               </Button>
             </div>
+
           </div>
         </CardContent>
       </Card>
-      
+
       {/* SUCCESS TOAST NOTIFICATIONS */}
       {showCallSuccess && (
         <div className="fixed bottom-5 right-5 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg animate-slide-up z-50">
           {callSuccessName ? `Call to ${callSuccessName} initiated successfully!` : 'Calls initiated successfully!'}
         </div>
       )}
-      
+
       {showFinalSuccess && (
         <div className="fixed bottom-5 right-5 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg animate-slide-up z-50">
           Selected candidates added to <strong>Final Selects</strong>!
@@ -950,7 +963,7 @@ const Results: React.FC = () => {
                 <Button
                   onClick={handleCancelDelete}
                   variant="outline"
-                  className="border-primary/30 hover:bg-primary/10"
+                  className="border-border hover:bg-primary/10"
                 >
                   Cancel
                 </Button>
@@ -991,13 +1004,13 @@ const Results: React.FC = () => {
                 Add a custom screening question that will be asked to candidates during their calls.
               </p>
             </CardHeader>
-            
+
             <CardContent className="p-6 space-y-6">
               {/* DISPLAY CURRENTLY SAVED QUESTION */}
               {savedCustomQuestion && (
                 <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg space-y-2">
                   <h4 className="text-sm font-semibold text-green-400">
-                    <CheckSquare className="w-4 h-4 inline mr-2"/>Currently Saved Question:
+                    <CheckSquare className="w-4 h-4 inline mr-2" />Currently Saved Question:
                   </h4>
                   <p className="text-sm text-foreground italic break-words">"{savedCustomQuestion}"</p>
                   <p className="text-xs text-muted-foreground">
@@ -1013,7 +1026,7 @@ const Results: React.FC = () => {
                   </label>
                   <Button
                     onClick={handleGenerateQuestion}
-                    disabled={isGenerating} 
+                    disabled={isGenerating}
                     variant="outline"
                     className="border-accent/30 hover:bg-accent/10"
                   >
@@ -1034,7 +1047,7 @@ const Results: React.FC = () => {
                   Let AI generate contextual screening questions based on your job requirements (Can be re-generated).
                 </p>
               </div>
-              
+
               {generatedOptions.length > 0 && (
                 <div className="space-y-3 p-4 bg-muted/20 border border-primary/10 rounded-lg">
                   <h4 className="text-sm font-semibold text-foreground">Select a Generated Question to use/edit:</h4>
@@ -1061,7 +1074,7 @@ const Results: React.FC = () => {
                   <span className="px-2 bg-card text-muted-foreground">or type your own</span>
                 </div>
               </div>
-              
+
               <div className="space-y-3">
                 <label className="text-sm font-medium text-foreground">
                   Question to Save (This will be saved to the database)
@@ -1085,18 +1098,19 @@ const Results: React.FC = () => {
                     setCustomQuestion('');
                     setGeneratedOptions([]);
                   }}
-                  className="border-primary/30 hover:bg-primary/10"
+                  className="border-border hover:bg-primary/10"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleSaveCustomQuestion}
                   disabled={!customQuestion.trim()}
-                  className="bg-accent hover:bg-accent/90 glow-accent"
+                  className="btn-theme-inverse px-8"
                 >
                   <CheckSquare className="w-4 h-4 mr-2" />
                   Save Question
                 </Button>
+
               </div>
             </CardContent>
           </Card>
@@ -1107,7 +1121,7 @@ const Results: React.FC = () => {
       <CandidateFormModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        candidateId={candidateToEditId} 
+        candidateId={candidateToEditId}
         searchId={Number(searchId)}
         onSuccess={handleCandidateSuccess}
       />

@@ -57,12 +57,12 @@ interface CandidateFormModalProps {
   onSuccess?: (candidate: Candidate) => void;
 }
 
-const CandidateFormModal: React.FC<CandidateFormModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  candidateId = null, 
-  searchId, 
-  onSuccess 
+const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
+  isOpen,
+  onClose,
+  candidateId = null,
+  searchId,
+  onSuccess
 }) => {
   const [formData, setFormData] = useState<CandidateFormData>({
     name: '',
@@ -75,7 +75,7 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
     summary: '',
     call_status: 'not_called'
   });
-  
+
   const [loading, setLoading] = useState<boolean>(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
@@ -94,7 +94,7 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
   const fetchCandidateData = async () => {
     setLoading(true);
     const token = localStorage.getItem("access_token");
-    
+
     try {
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/api/candidate?candidate_id=${candidateId}`,
@@ -106,9 +106,9 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
           }
         }
       );
-      
+
       const data = await response.json();
-      
+
       if (data.success && data.candidate) {
         const candidate: Candidate = data.candidate;
         setFormData({
@@ -151,28 +151,28 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
-    
+
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
     }
-    
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email is invalid';
     }
-    
+
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone is required';
     } else if (!/^\+?[\d\s\-()]+$/.test(formData.phone)) {
       newErrors.phone = 'Phone number is invalid';
     }
-    
+
     const matchScore = parseFloat(formData.match_score);
     if (formData.match_score && (isNaN(matchScore) || matchScore < 0 || matchScore > 100)) {
       newErrors.match_score = 'Match score must be between 0 and 100';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -183,7 +183,7 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
       ...prev,
       [name]: value
     }));
-    
+
     if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({
         ...prev,
@@ -206,11 +206,11 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
     setLoading(true);
     setShowConfirmation(false);
     const token = localStorage.getItem("access_token");
-    
+
     try {
       const url = `${import.meta.env.VITE_API_URL}/api/candidate`;
       const method = isEditMode ? 'PUT' : 'POST';
-      
+
       const payload = isEditMode ? {
         candidate_id: candidateId,
         name: formData.name,
@@ -234,7 +234,7 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
         summary: formData.summary,
         call_status: formData.call_status
       };
-      
+
       const response = await fetch(url, {
         method: method,
         headers: {
@@ -243,9 +243,9 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
         },
         body: JSON.stringify(payload)
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         toast.success(isEditMode ? "Candidate updated successfully" : "Candidate added successfully");
         if (onSuccess && data.candidate) {
@@ -269,8 +269,8 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
   return (
     <>
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <Card className="bg-card border-primary/20 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-          <CardHeader className="border-b border-primary/10">
+        <Card className="bg-card border-border w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+          <CardHeader className="border-b border-border">
             <div className="flex items-center justify-between">
               <CardTitle className="text-2xl flex items-center gap-2">
                 <User className="w-6 h-6 text-primary" />
@@ -290,7 +290,7 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
               {isEditMode ? 'Update candidate information below' : 'Fill in the details to add a new candidate'}
             </p>
           </CardHeader>
-          
+
           <CardContent className="p-6">
             {loading && isEditMode ? (
               <div className="flex items-center justify-center py-12">
@@ -303,7 +303,7 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
                     <User className="w-5 h-5 text-primary" />
                     Basic Information
                   </h3>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground flex items-center gap-1">
@@ -314,7 +314,7 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
                         value={formData.name}
                         onChange={handleChange}
                         placeholder="John Doe"
-                        className={`bg-background border-primary/30 ${errors.name ? 'border-red-400' : ''}`}
+                        className={`bg-background border-border ${errors.name ? 'border-red-400' : ''}`}
                       />
                       {errors.name && (
                         <p className="text-xs text-red-400 flex items-center gap-1">
@@ -323,7 +323,7 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
                         </p>
                       )}
                     </div>
-                    
+
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground flex items-center gap-1">
                         <Mail className="w-4 h-4" />
@@ -335,7 +335,7 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
                         value={formData.email}
                         onChange={handleChange}
                         placeholder="john.doe@example.com"
-                        className={`bg-background border-primary/30 ${errors.email ? 'border-red-400' : ''}`}
+                        className={`bg-background border-border ${errors.email ? 'border-red-400' : ''}`}
                       />
                       {errors.email && (
                         <p className="text-xs text-red-400 flex items-center gap-1">
@@ -344,7 +344,7 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
                         </p>
                       )}
                     </div>
-                    
+
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground flex items-center gap-1">
                         <Phone className="w-4 h-4" />
@@ -355,7 +355,7 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
                         value={formData.phone}
                         onChange={handleChange}
                         placeholder="+1 234 567 8900"
-                        className={`bg-background border-primary/30 ${errors.phone ? 'border-red-400' : ''}`}
+                        className={`bg-background border-border ${errors.phone ? 'border-red-400' : ''}`}
                       />
                       {errors.phone && (
                         <p className="text-xs text-red-400 flex items-center gap-1">
@@ -364,7 +364,7 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
                         </p>
                       )}
                     </div>
-                    
+
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground">
                         Call Status
@@ -373,7 +373,7 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
                         name="call_status"
                         value={formData.call_status}
                         onChange={handleChange}
-                        className="w-full bg-background border border-primary/30 rounded-lg px-3 py-2 text-foreground"
+                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground"
                       >
                         <option value="not_called">Not Called</option>
                         <option value="Called & Answered">Called & Answered</option>
@@ -385,12 +385,12 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
                   </div>
                 </div>
 
-                <div className="space-y-4 pt-4 border-t border-primary/10">
+                <div className="space-y-4 pt-4 border-t border-border">
                   <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                     <Briefcase className="w-5 h-5 text-primary" />
                     Professional Information
                   </h3>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground">
@@ -401,10 +401,10 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
                         value={formData.total_experience}
                         onChange={handleChange}
                         placeholder="5"
-                        className="bg-background border-primary/30"
+                        className="bg-background border-border"
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground">
                         Relevant Experience (Years)
@@ -414,10 +414,10 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
                         value={formData.relevant_work_experience}
                         onChange={handleChange}
                         placeholder="3"
-                        className="bg-background border-primary/30"
+                        className="bg-background border-border"
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground flex items-center gap-1">
                         <Star className="w-4 h-4" />
@@ -431,7 +431,7 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
                         value={formData.match_score}
                         onChange={handleChange}
                         placeholder="85"
-                        className={`bg-background border-primary/30 ${errors.match_score ? 'border-red-400' : ''}`}
+                        className={`bg-background border-border ${errors.match_score ? 'border-red-400' : ''}`}
                       />
                       {errors.match_score && (
                         <p className="text-xs text-red-400 flex items-center gap-1">
@@ -441,7 +441,7 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground">
                       Skills
@@ -457,7 +457,7 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
                       Comma-separated list of skills
                     </p>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground flex items-center gap-1">
                       <FileText className="w-4 h-4" />
@@ -469,19 +469,19 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
                       onChange={handleChange}
                       placeholder="Brief summary of candidate's background and qualifications..."
                       rows={4}
-                      className="w-full bg-background border border-primary/30 rounded-lg px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                      className="w-full bg-background border border-border rounded-lg px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
                     />
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-primary/10">
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
                   <Button
                     onClick={() => {
                       onClose();
                       resetForm();
                     }}
                     variant="outline"
-                    className="border-primary/30 hover:bg-primary/10"
+                    className="border-border hover:bg-primary/10"
                   >
                     Cancel
                   </Button>
@@ -512,8 +512,8 @@ const CandidateFormModal: React.FC<CandidateFormModalProps> = ({
       {/* Confirmation Modal */}
       {showConfirmation && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-          <Card className="bg-card border-primary/20 w-full max-w-md">
-            <CardHeader className="border-b border-primary/10">
+          <Card className="bg-card border-border w-full max-w-md">
+            <CardHeader className="border-b border-border">
               <CardTitle className="text-xl flex items-center gap-2">
                 <CheckCircle className="w-6 h-6 text-accent" />
                 Confirm {isEditMode ? 'Update' : 'Addition'}

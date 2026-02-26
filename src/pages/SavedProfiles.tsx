@@ -145,7 +145,7 @@ const SavedProfiles = () => {
             {filteredCandidates.map((candidate) => (
               <div
                 key={candidate.id}
-                className="bg-card border border-border rounded-lg p-6 hover:border-primary/50 transition-all duration-300 group relative"
+                className="bg-card border border-border rounded-lg p-6 hover:border-primary transition-all duration-300 group relative"
               >
                 {/* Favorite Badge */}
                 <div className="absolute top-4 right-4">
@@ -232,13 +232,13 @@ const SavedProfiles = () => {
                     <p className="text-sm text-foreground">
                       {candidate.created_at
                         ? new Date(candidate.created_at).toLocaleDateString(
-                            'en-IN',
-                            {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                            }
-                          )
+                          'en-IN',
+                          {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          }
+                        )
                         : '-'}
                     </p>
                   </div>
@@ -248,7 +248,7 @@ const SavedProfiles = () => {
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => handleCandidateClick(candidate.id)}
-                    className="flex-1 bg-primary/20 hover:bg-primary/30 text-primary px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+                    className="flex-1 bg-primary/20 hover:bg-primary/30 text-primary border border-border px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2"
                   >
                     <Eye className="w-4 h-4" />
                     <span>View Profile</span>

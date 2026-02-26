@@ -13,11 +13,16 @@ import {
   LogOut,
   Star,
   ClipboardList,
-  Inbox
+  Inbox,
+  Sun,
+  Moon
 } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
+
 
 const Sidebar = () => {
   const location = useLocation();
+  const { isDark, toggleTheme } = useTheme();
   const role = localStorage.getItem("role"); // "admin" | "user" | "master"
 
   const menuItems = [
@@ -62,7 +67,7 @@ const Sidebar = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 space-y-2">
+      <nav className="flex-1 px-4 py-6 space-y-1">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
@@ -71,11 +76,10 @@ const Sidebar = () => {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
-                isActive
-                  ? 'bg-primary/20 text-primary border border-primary/30 glow-primary'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
-              }`}
+              className={`flex items-center space-x-3 px-4 py-2.5 rounded-lg transition-all duration-200 group border border-transparent ${isActive
+                ? 'bg-secondary text-foreground border-border shadow-sm'
+                : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                }`}
             >
               <Icon className={`w-5 h-5 ${isActive ? 'text-primary' : 'group-hover:text-primary'}`} />
               <span className="font-medium">{item.label}</span>
@@ -85,10 +89,17 @@ const Sidebar = () => {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-border space-y-1">
+        <button
+          onClick={toggleTheme}
+          className="flex w-full items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-all duration-200 border border-transparent hover:border-border"
+        >
+          {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          <span className="font-medium">{isDark ? 'Lite Mode' : 'Dark Mode'}</span>
+        </button>
         <button
           onClick={handleLogout}
-          className="flex w-full items-center space-x-3 px-4 py-3 rounded-lg hover:bg-red-100 text-red-600 hover:text-red-800 transition"
+          className="flex w-full items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-destructive/5 text-destructive transition-all duration-200 border border-transparent hover:border-destructive/20"
         >
           <LogOut className="w-5 h-5" />
           <span className="font-medium">Logout</span>

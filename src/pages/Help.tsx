@@ -87,7 +87,7 @@ const Help = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* FAQ Section */}
         <div className="lg:col-span-2">
-          <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+          <Card className="bg-card/50 backdrop-blur-sm border-border">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <HelpCircle className="w-5 h-5" />
@@ -114,7 +114,7 @@ const Help = () => {
 
         {/* Support Form */}
         <div className="space-y-6">
-          <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+          <Card className="bg-card/50 backdrop-blur-sm border-border">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <MessageCircle className="w-5 h-5" />
@@ -132,7 +132,7 @@ const Help = () => {
                     onChange={(e) => setSupportForm(prev => ({ ...prev, subject: e.target.value }))}
                     placeholder="Briefly describe your issue"
                     required
-                    className="bg-background/50 border-border/50 focus:ring-primary focus:border-primary"
+                    className="bg-background/50 border-border focus:ring-primary focus:border-primary"
                   />
                 </div>
                 <div>
@@ -144,7 +144,7 @@ const Help = () => {
                     placeholder="Describe your issue in detail..."
                     rows={6}
                     required
-                    className="bg-background/50 border-border/50 focus:ring-primary focus:border-primary resize-none"
+                    className="bg-background/50 border-border focus:ring-primary focus:border-primary resize-none"
                   />
                 </div>
                 <Button type="submit" className="w-full bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105 glow-primary">
@@ -156,7 +156,7 @@ const Help = () => {
           </Card>
 
           {/* Contact Info */}
-          <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+          <Card className="bg-card/50 backdrop-blur-sm border-border">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Mail className="w-5 h-5" />
@@ -182,7 +182,7 @@ const Help = () => {
           </Card>
 
           {/* Legal Links */}
-          <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+          <Card className="bg-card/50 backdrop-blur-sm border-border">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <FileText className="w-5 h-5" />

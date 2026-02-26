@@ -301,7 +301,7 @@ const Transcript: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-border mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading candidate data...</p>
         </div>
       </div>
@@ -330,7 +330,7 @@ const Transcript: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={() => navigate(-1)}
-            className="border-primary/30 hover:bg-primary/10"
+            className="border-border hover:bg-primary/10"
           >
             <ArrowLeft className="w-4 h-4 mr-2" /> Back
           </Button>
@@ -346,7 +346,7 @@ const Transcript: React.FC = () => {
         {calls.length > 0 && (
           <Button
             variant="outline"
-            className="border-accent/30 text-accent hover:bg-accent/10 w-full md:w-auto"
+            className="border-border text-accent hover:bg-accent/10 w-full md:w-auto"
             onClick={handleDownload}
           >
             <Download className="w-4 h-4 mr-2" /> Download Transcript
@@ -367,7 +367,8 @@ const Transcript: React.FC = () => {
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Quick Stats */}
-            <Card className="lg:col-span-2 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
+            <Card className="lg:col-span-2 glass-card">
+
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Target className="w-5 h-5 text-primary" />
@@ -376,36 +377,37 @@ const Transcript: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-card/50 rounded-lg">
-                    <div className="text-3xl font-bold text-green-400">
+                  <div className="text-center p-4 glass-card rounded-lg">
+                    <div className="text-3xl font-bold text-foreground">
                       {candidate?.matchScore || 0}%
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">Match Score</div>
+                    <div className="text-xs text-foreground font-medium mt-1">Match Score</div>
                   </div>
-                  <div className="text-center p-4 bg-card/50 rounded-lg">
-                    <div className="text-2xl font-bold text-primary">
+                  <div className="text-center p-4 glass-card rounded-lg">
+                    <div className="text-2xl font-bold text-foreground">
                       {candidate?.totalExperience || 'N/A'}
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">Total Exp.</div>
+                    <div className="text-xs text-foreground font-medium mt-1">Total Exp.</div>
                   </div>
-                  <div className="text-center p-4 bg-card/50 rounded-lg">
-                    <div className="text-2xl font-bold text-accent">
+                  <div className="text-center p-4 glass-card rounded-lg">
+                    <div className="text-2xl font-bold text-foreground">
                       {candidate?.relevantExperience || 'N/A'}
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">Relevant Exp.</div>
+                    <div className="text-xs text-foreground font-medium mt-1">Relevant Exp.</div>
                   </div>
-                  <div className="text-center p-4 bg-card/50 rounded-lg">
-                    <Badge className={getScoreTierColor(analysisReport?.scoring_tier || '')}>
+                  <div className="text-center p-4 glass-card rounded-lg">
+                    <Badge className="bg-foreground text-background border-none mb-1">
                       {analysisReport?.scoring_tier || 'N/A'}
                     </Badge>
-                    <div className="text-xs text-muted-foreground mt-2">Scoring Tier</div>
+                    <div className="text-xs text-foreground font-medium mt-2">Scoring Tier</div>
                   </div>
                 </div>
+
               </CardContent>
             </Card>
 
             {/* Contact Info */}
-            <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+            <Card className="bg-card/50 backdrop-blur-sm border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Phone className="w-4 h-4 text-primary" />
@@ -430,7 +432,7 @@ const Transcript: React.FC = () => {
           </div>
 
           {/* Summary */}
-          <Card className="bg-card/50 backdrop-blur-sm border-accent/20">
+          <Card className="bg-card/50 backdrop-blur-sm border-border">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="w-5 h-5 text-accent" />
@@ -452,7 +454,8 @@ const Transcript: React.FC = () => {
             <>
               {/* Recommendation */}
               {agentChecks.agent_4_recommendation && (
-                <Card className="bg-gradient-to-br from-green-500/10 to-blue-500/10 border-green-500/20">
+                <Card className="glass-card">
+
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Award className="w-5 h-5 text-green-400" />
@@ -460,18 +463,16 @@ const Transcript: React.FC = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Decision:</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-foreground">Decision:</span>
                       <Badge className={getRecommendationColor(agentChecks.agent_4_recommendation.recommendation || '')}>
                         {agentChecks.agent_4_recommendation.recommendation || 'N/A'}
                       </Badge>
                     </div>
                     {agentChecks.agent_4_recommendation.reasoning && (
-                      <div className="p-4 bg-card/50 rounded-lg">
-                        <p className="text-sm text-foreground leading-relaxed">
-                          {agentChecks.agent_4_recommendation.reasoning}
-                        </p>
-                      </div>
+                      <p className="text-sm text-foreground leading-relaxed mt-2 pl-0">
+                        {agentChecks.agent_4_recommendation.reasoning}
+                      </p>
                     )}
                   </CardContent>
                 </Card>
@@ -479,7 +480,7 @@ const Transcript: React.FC = () => {
 
               {/* Skills Assessment */}
               {agentChecks.agent_2_skills_gap && (
-                <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+                <Card className="bg-card/50 backdrop-blur-sm border-border">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Code className="w-5 h-5 text-primary" />
@@ -526,7 +527,7 @@ const Transcript: React.FC = () => {
 
               {/* Project Depth */}
               {agentChecks.agent_3_project_depth && (
-                <Card className="bg-card/50 backdrop-blur-sm border-accent/20">
+                <Card className="bg-card/50 backdrop-blur-sm border-border">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Zap className="w-5 h-5 text-accent" />
@@ -544,7 +545,7 @@ const Transcript: React.FC = () => {
               {/* Strengths & Weaknesses */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {analysisReport?.strengths && analysisReport.strengths.length > 0 && (
-                  <Card className="bg-card/50 backdrop-blur-sm border-green-500/20">
+                  <Card className="bg-card/50 backdrop-blur-sm border-border">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-base">
                         <TrendingUp className="w-4 h-4 text-green-400" />
@@ -565,7 +566,7 @@ const Transcript: React.FC = () => {
                 )}
 
                 {analysisReport?.weaknesses && analysisReport.weaknesses.length > 0 && (
-                  <Card className="bg-card/50 backdrop-blur-sm border-yellow-500/20">
+                  <Card className="bg-card/50 backdrop-blur-sm border-border">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-base">
                         <AlertTriangle className="w-4 h-4 text-yellow-400" />
@@ -588,7 +589,8 @@ const Transcript: React.FC = () => {
 
               {/* Special Highlights */}
               {analysisReport?.special_highlights && analysisReport.special_highlights.length > 0 && (
-                <Card className="bg-gradient-to-br from-accent/10 to-primary/10 border-accent/20">
+                <Card className="glass-card">
+
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Star className="w-5 h-5 text-accent" />
@@ -609,7 +611,7 @@ const Transcript: React.FC = () => {
               )}
             </>
           ) : (
-            <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+            <Card className="bg-card/50 backdrop-blur-sm border-border">
               <CardContent className="p-12">
                 <div className="flex flex-col items-center justify-center text-muted-foreground">
                   <AlertTriangle className="w-12 h-12 mb-4" />
@@ -623,7 +625,7 @@ const Transcript: React.FC = () => {
         {/* Skills & Experience Tab */}
         <TabsContent value="skills" className="space-y-6">
           {/* Skills List */}
-          <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+          <Card className="bg-card/50 backdrop-blur-sm border-border">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Code className="w-5 h-5 text-primary" />
@@ -643,7 +645,7 @@ const Transcript: React.FC = () => {
 
           {/* Experience in Skills */}
           {(candidate?.skillsExperience || analysisReport?.experience_in_skills) && (
-            <Card className="bg-card/50 backdrop-blur-sm border-accent/20">
+            <Card className="bg-card/50 backdrop-blur-sm border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Briefcase className="w-5 h-5 text-accent" />
@@ -676,7 +678,7 @@ const Transcript: React.FC = () => {
         <TabsContent value="calls" className="space-y-6">
           {calls.length > 0 ? (
             <>
-              <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+              <Card className="bg-card/50 backdrop-blur-sm border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <MessageSquare className="w-5 h-5 text-primary" />
@@ -722,8 +724,8 @@ const Transcript: React.FC = () => {
                               >
                                 <div
                                   className={`max-w-[85%] sm:max-w-[80%] p-3 rounded-lg shadow-sm ${entry.speaker === 'ai'
-                                    ? 'bg-primary/10 border border-primary/20 text-foreground'
-                                    : 'bg-accent/10 border border-accent/20 text-foreground'
+                                    ? 'bg-primary/10 border border-border text-foreground'
+                                    : 'bg-accent/10 border border-border text-foreground'
                                     }`}
                                 >
                                   <div className="flex items-center justify-between mb-1.5 gap-2">
@@ -760,7 +762,7 @@ const Transcript: React.FC = () => {
 
               {/* Structured Data for Active Call */}
               {Object.keys(structuredData).length > 0 && (
-                <Card className="bg-card/50 backdrop-blur-sm border-accent/20">
+                <Card className="bg-card/50 backdrop-blur-sm border-border">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Hash className="w-4 h-4 text-accent" />
@@ -787,7 +789,7 @@ const Transcript: React.FC = () => {
 
               {/* Call Summary */}
               {callSummary && (
-                <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+                <Card className="bg-card/50 backdrop-blur-sm border-border">
                   <CardHeader>
                     <CardTitle className="text-base">
                       Call Summary (Call {calls.findIndex(c => String(c.id) === activeCallId) + 1})
@@ -804,7 +806,7 @@ const Transcript: React.FC = () => {
               )}
             </>
           ) : (
-            <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+            <Card className="bg-card/50 backdrop-blur-sm border-border">
               <CardContent className="p-12">
                 <div className="flex flex-col items-center justify-center text-muted-foreground">
                   <MessageSquare className="w-12 h-12 mb-4" />

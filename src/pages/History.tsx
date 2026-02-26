@@ -146,12 +146,8 @@ const History = () => {
                       {search.created_at ? new Date(search.created_at).toLocaleDateString() : '-'}
                     </td>
                     <td className="p-4">
-                      <span className="bg-primary/20 text-primary px-2 py-1 rounded-full text-sm font-medium">
-                        {Array.isArray(search.shortlisted_index)
-                          ? search.shortlisted_index.length
-                          : (typeof search.shortlisted_index === 'string'
-                            ? JSON.parse(search.shortlisted_index).length
-                            : 0)}
+                      <span className="bg-primary/20 text-primary border border-border px-2 py-1 rounded-full text-sm font-medium">
+                        {search.shortlist_count || 0}
                       </span>
                     </td>
                     <td className="p-4">

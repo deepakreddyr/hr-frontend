@@ -10,35 +10,36 @@ interface MetricCardProps {
   color?: 'primary' | 'accent' | 'success' | 'warning';
 }
 
-const MetricCard: React.FC<MetricCardProps> = ({ 
-  title, 
-  value, 
-  icon: Icon, 
-  trend, 
-  color = 'primary' 
+const MetricCard: React.FC<MetricCardProps> = ({
+  title,
+  value,
+  icon: Icon,
+  trend,
+  color = 'primary'
 }) => {
   const colorClasses = {
-    primary: 'from-primary to-blue-600',
-    accent: 'from-accent to-purple-600',
-    success: 'from-green-500 to-emerald-600',
-    warning: 'from-yellow-500 to-orange-600'
+    primary: 'bg-primary',
+    accent: 'bg-accent',
+    success: 'bg-green-500',
+    warning: 'bg-yellow-500'
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg p-6 hover:border-primary/50 transition-all duration-300 group">
+    <div className="glass-card rounded-2xl p-6 hover-glow group">
       <div className="flex items-center justify-between mb-4">
-        <div className={`p-3 rounded-lg bg-gradient-to-r ${colorClasses[color]} glow-primary`}>
-          <Icon className="w-6 h-6 text-white" />
+        <div className={`p-3 rounded-xl ${colorClasses[color]} shadow-sm`}>
+          <Icon className="w-5 h-5 text-primary-foreground" />
         </div>
+
         {trend && (
-          <span className="text-sm text-green-400 font-medium">
+          <span className="text-xs text-green-500 font-semibold px-2 py-1 bg-green-500/10 rounded-full">
             {trend}
           </span>
         )}
       </div>
-      
-      <h3 className="text-2xl font-bold text-foreground mb-2">{value}</h3>
-      <p className="text-muted-foreground text-sm">{title}</p>
+
+      <h3 className="text-2xl font-bold text-foreground mb-1">{value}</h3>
+      <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider">{title}</p>
     </div>
   );
 };

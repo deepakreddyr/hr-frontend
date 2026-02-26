@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Phone, 
-  Heart, 
-  UserCheck, 
-  Star, 
-  Filter, 
-  Download, 
+import {
+  Phone,
+  Heart,
+  UserCheck,
+  Star,
+  Filter,
+  Download,
   Trash2,
   Search,
   SortAsc,
@@ -16,13 +16,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
 
 const FinalSelects = () => {
@@ -44,9 +44,9 @@ const FinalSelects = () => {
       try {
         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/final-selects`, {
           headers: {
-          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-          "Content-Type": "application/json",
-        },
+            "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+            "Content-Type": "application/json",
+          },
         });
         const data = await res.json();
         setCandidates(data.candidates || []);
@@ -75,8 +75,8 @@ const FinalSelects = () => {
   }, []);
 
   const handleCandidateSelect = (candidateId: number) => {
-    setSelectedCandidates(prev => 
-      prev.includes(candidateId) 
+    setSelectedCandidates(prev =>
+      prev.includes(candidateId)
         ? prev.filter(id => id !== candidateId)
         : [...prev, candidateId]
     );
@@ -223,8 +223,8 @@ const FinalSelects = () => {
           "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
-          remove_from_final: selectedCandidates 
+        body: JSON.stringify({
+          remove_from_final: selectedCandidates
         })
       });
 
@@ -249,7 +249,7 @@ const FinalSelects = () => {
     // Define CSV headers
     const headers = [
       'Name',
-      'Email', 
+      'Email',
       'Phone',
       'Skills',
       'Total Experience',
@@ -309,13 +309,13 @@ const FinalSelects = () => {
 
   const filteredCandidates = candidates.filter(candidate => {
     const matchesSearch = candidate.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         candidate.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         candidate.skills.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      candidate.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      candidate.skills.toLowerCase().includes(searchTerm.toLowerCase());
+
     if (filter === 'joined') return candidate.joined && matchesSearch;
     if (filter === 'pending') return !candidate.joined && matchesSearch;
     if (filter === 'high-score') return candidate.matchScore >= 90 && matchesSearch;
-    
+
     return matchesSearch;
   });
 
@@ -332,7 +332,7 @@ const FinalSelects = () => {
         <div className="flex items-center space-x-3">
           <Button
             variant="outline"
-            className="border-accent/30 text-accent hover:bg-accent/10"
+            className="border-border text-accent hover:bg-accent/10"
             onClick={handleExportCSV}
           >
             <Download className="w-4 h-4 mr-2" />
@@ -341,7 +341,7 @@ const FinalSelects = () => {
           <div className="relative" ref={bulkMenuRef}>
             <Button
               variant="outline"
-              className="border-primary/30 text-primary hover:bg-primary/10"
+              className="border-border text-primary hover:bg-primary/10"
               disabled={selectedCandidates.length === 0}
               onClick={() => setShowBulkMenu(!showBulkMenu)}
             >
@@ -349,10 +349,10 @@ const FinalSelects = () => {
               Bulk Actions ({selectedCandidates.length})
               <ChevronDown className="w-4 h-4 ml-1" />
             </Button>
-            
+
             {/* Bulk Actions Menu */}
             {showBulkMenu && selectedCandidates.length > 0 && (
-              <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-primary/20 rounded-lg shadow-lg backdrop-blur-sm z-50">
+              <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-lg shadow-lg backdrop-blur-sm z-50">
                 <div className="p-2 space-y-1">
                   <Button
                     size="sm"
@@ -390,7 +390,7 @@ const FinalSelects = () => {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+        <Card className="bg-card/50 backdrop-blur-sm border-border">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -401,7 +401,7 @@ const FinalSelects = () => {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-card/50 backdrop-blur-sm border-green-400/20">
+        <Card className="bg-card/50 backdrop-blur-sm border-border">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -414,7 +414,7 @@ const FinalSelects = () => {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-card/50 backdrop-blur-sm border-accent/20">
+        <Card className="bg-card/50 backdrop-blur-sm border-border">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -430,7 +430,7 @@ const FinalSelects = () => {
       </div>
 
       {/* Filters and Search */}
-      <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+      <Card className="bg-card/50 backdrop-blur-sm border-border">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
             <div className="flex items-center space-x-4">
@@ -439,7 +439,7 @@ const FinalSelects = () => {
                 <select
                   value={filter}
                   onChange={(e) => setFilter(e.target.value)}
-                  className="bg-background border border-primary/30 rounded-lg px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="bg-background border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
                   <option value="all">All Candidates</option>
                   <option value="joined">Joined Only</option>
@@ -449,7 +449,7 @@ const FinalSelects = () => {
               </div>
               <div className="flex items-center space-x-2">
                 <SortAsc className="w-5 h-5 text-muted-foreground" />
-                <select className="bg-background border border-primary/30 rounded-lg px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50">
+                <select className="bg-background border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50">
                   <option>Sort by Match Score</option>
                   <option>Sort by Name</option>
                   <option>Sort by Status</option>
@@ -462,7 +462,7 @@ const FinalSelects = () => {
                 placeholder="Search candidates..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-background border-primary/30 focus:border-primary focus:ring-primary/20"
+                className="pl-10 bg-background border-border focus:border-primary focus:ring-primary/20"
               />
             </div>
           </div>
@@ -470,7 +470,7 @@ const FinalSelects = () => {
       </Card>
 
       {/* Candidates Table */}
-      <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+      <Card className="bg-card/50 backdrop-blur-sm border-border">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Final Selected Candidates</span>
@@ -479,7 +479,7 @@ const FinalSelects = () => {
                 type="checkbox"
                 checked={selectedCandidates.length === candidates.length}
                 onChange={handleSelectAll}
-                className="w-4 h-4 text-primary bg-background border-primary/30 rounded focus:ring-primary/20"
+                className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary/20"
               />
               <span className="text-sm text-muted-foreground">Select All</span>
             </div>
@@ -489,7 +489,7 @@ const FinalSelects = () => {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="border-primary/20">
+                <TableRow className="border-border">
                   <TableHead className="w-12"></TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
@@ -504,9 +504,9 @@ const FinalSelects = () => {
               </TableHeader>
               <TableBody>
                 {filteredCandidates.map((candidate) => (
-                  <TableRow 
-                    key={candidate.id} 
-                    className="border-primary/20 hover:bg-primary/5 cursor-pointer"
+                  <TableRow
+                    key={candidate.id}
+                    className="border-border hover:bg-primary/5 cursor-pointer"
                     onClick={() => navigate(`/transcript/${candidate.id}`)}
                   >
                     <TableCell onClick={(e) => e.stopPropagation()}>
@@ -514,7 +514,7 @@ const FinalSelects = () => {
                         type="checkbox"
                         checked={selectedCandidates.includes(candidate.id)}
                         onChange={() => handleCandidateSelect(candidate.id)}
-                        className="w-4 h-4 text-primary bg-background border-primary/30 rounded focus:ring-primary/20"
+                        className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary/20"
                       />
                     </TableCell>
                     <TableCell>
@@ -555,11 +555,10 @@ const FinalSelects = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => handleMarkAsJoined(candidate.id, candidate.joined)}
-                          className={`${
-                            candidate.joined
-                              ? 'border-yellow-400/30 text-yellow-400 hover:bg-yellow-400/10'
-                              : 'border-green-400/30 text-green-400 hover:bg-green-400/10'
-                          }`}
+                          className={`${candidate.joined
+                            ? 'border-border text-yellow-400 hover:bg-yellow-400/10'
+                            : 'border-border text-green-400 hover:bg-green-400/10'
+                            }`}
                         >
                           {candidate.joined ? 'Undo Joined' : 'Mark Joined'}
                         </Button>
@@ -568,7 +567,7 @@ const FinalSelects = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => handleRemoveFromFinalList(candidate.id)}
-                          className="border-red-400/30 text-red-400 hover:bg-red-400/10"
+                          className="border-border text-red-400 hover:bg-red-400/10"
                         >
                           <Trash2 className="w-3 h-3" />
                         </Button>
@@ -603,11 +602,11 @@ const FinalSelects = () => {
                 <p className="text-sm text-muted-foreground">This action cannot be undone</p>
               </div>
             </div>
-            
+
             <p className="text-foreground mb-6">
               Are you sure you want to remove <span className="font-semibold text-destructive">{confirmAction?.count}</span> candidates from the final list?
             </p>
-            
+
             <div className="flex justify-end space-x-3">
               <Button
                 variant="outline"

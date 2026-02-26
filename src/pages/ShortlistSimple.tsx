@@ -8,12 +8,14 @@ import {
   Upload,
   ListChecks,
   Database,
+  FileSpreadsheet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast"; // assuming shadcn toast
@@ -50,7 +52,7 @@ const IconInput = ({
         required={required}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="pl-9 bg-background/50 border-primary/30 focus:border-primary focus:ring-primary/20"
+        className="pl-9 bg-background/50 border-border focus:border-primary focus:ring-primary/20"
       />
     </div>
   </div>
@@ -71,8 +73,12 @@ const ShortlistForm = () => {
     resumeLink: "",
     numCandidates: 5,
     jdFile: null as File | null,
+    excelFile: null as File | null,
     noticePeriod: "",
   });
+
+  const [resumeSource, setResumeSource] = useState<'link' | 'excel'>('link');
+  const [excelDragOver, setExcelDragOver] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -153,17 +159,84 @@ const ShortlistForm = () => {
     setFormData({ ...formData, jdFile: file });
   };
 
+  const handleExcelDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setExcelDragOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      const validTypes = [
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-excel",
+        "text/csv"
+      ];
+      if (validTypes.includes(file.type) || file.name.endsWith('.xlsx') || file.name.endsWith('.xls') || file.name.endsWith('.csv')) {
+        setFormData({ ...formData, excelFile: file });
+      } else {
+        alert("Please upload an Excel or CSV file");
+      }
+    }
+  };
+
+  const handleExcelFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setFormData({ ...formData, excelFile: file });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting) return;
+
+    // Validate JD file (browsers don't enforce required on hidden inputs)
+    if (!formData.jdFile) {
+      toast({
+        title: "JD file required",
+        description: "Please upload a Job Description PDF before submitting.",
+        variant: "destructive",
+        duration: 5000,
+      });
+      return;
+    }
+
+    // Validate resume source
+    if (resumeSource === 'link' && !formData.resumeLink.trim()) {
+      toast({
+        title: "Resume link required",
+        description: "Please enter a Google Drive or Sheet link for resumes.",
+        variant: "destructive",
+        duration: 5000,
+      });
+      return;
+    }
+    if (resumeSource === 'excel' && !formData.excelFile) {
+      toast({
+        title: "Excel file required",
+        description: "Please upload an Excel or CSV file with resumes.",
+        variant: "destructive",
+        duration: 5000,
+      });
+      return;
+    }
+
     setSubmitting(true);
 
     try {
       const payload = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        if (key === "jdFile" && value) {
-          payload.append("jdFile", value as File);
-        } else {
+
+      // Always append the JD file
+      payload.append("jdFile", formData.jdFile);
+
+      // Append resume source
+      if (resumeSource === 'link') {
+        payload.append("resumeLink", formData.resumeLink);
+      } else if (formData.excelFile) {
+        payload.append("excelFile", formData.excelFile);
+      }
+
+      // Append remaining scalar fields
+      const scalarFields = ['searchName', 'hiringCompany', 'hrCompany', 'jobRole', 'skills', 'companyLocation', 'remoteWork', 'contractHiring', 'numCandidates', 'noticePeriod'] as const;
+      scalarFields.forEach((key) => {
+        const value = formData[key];
+        if (value !== null && value !== undefined) {
           payload.append(key, String(value));
         }
       });
@@ -218,8 +291,10 @@ const ShortlistForm = () => {
       resumeLink: "",
       numCandidates: 5,
       jdFile: null,
+      excelFile: null,
       noticePeriod: "",
     });
+    setResumeSource('link');
     setSelectedTaskId(null);
     setSourceType('blank');
   };
@@ -241,13 +316,14 @@ const ShortlistForm = () => {
       </p>
 
       {/* Task Import Section */}
-      <Card className="bg-card/50 border-primary/20">
+      <Card className="glass-card animate-slide-up" style={{ animationDelay: '0.1s' }}>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+          <CardTitle className="flex items-center space-x-2 text-foreground">
             <Database className="w-5 h-5 text-primary" />
             <span>Import From Task (Optional)</span>
           </CardTitle>
         </CardHeader>
+
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -300,13 +376,14 @@ const ShortlistForm = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Left Column */}
-        <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+        <Card className="glass-card animate-slide-up" style={{ animationDelay: '0.2s' }}>
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
+            <CardTitle className="flex items-center space-x-2 text-foreground">
               <Building className="w-5 h-5 text-primary" />
               <span>Job & Company Info</span>
             </CardTitle>
           </CardHeader>
+
           <CardContent className="space-y-4">
             <IconInput
               label="Search Name"
@@ -350,7 +427,7 @@ const ShortlistForm = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, skills: e.target.value })
                 }
-                className="bg-background/50 border-primary/30 focus:border-primary focus:ring-primary/20 min-h-[80px]"
+                className="bg-background/50 border-border focus:border-primary focus:ring-primary/20 min-h-[80px]"
               />
             </div>
             <IconInput
@@ -399,21 +476,72 @@ const ShortlistForm = () => {
         </Card>
 
         {/* Right Column */}
-        <Card className="bg-card/50 backdrop-blur-sm border-accent/20">
+        <Card className="glass-card animate-slide-up" style={{ animationDelay: '0.3s' }}>
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Upload className="w-5 h-5 text-accent" />
+            <CardTitle className="flex items-center space-x-2 text-foreground">
+              <Upload className="w-5 h-5 text-primary" />
               <span>Resume & JD Upload</span>
             </CardTitle>
           </CardHeader>
+
           <CardContent className="space-y-4">
-            <IconInput
-              label="Resume Link (Google Drive/Sheet)"
-              icon={Upload}
-              value={formData.resumeLink}
-              onChange={(val) => setFormData({ ...formData, resumeLink: val })}
-              placeholder="Eg. https://drive.google.com/..."
-            />
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-foreground">
+                Resume Source
+              </label>
+              <Tabs value={resumeSource} onValueChange={(val) => setResumeSource(val as 'link' | 'excel')} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="link">Drive Link</TabsTrigger>
+                  <TabsTrigger value="excel">Excel File</TabsTrigger>
+                </TabsList>
+                <TabsContent value="link" className="mt-0">
+                  <IconInput
+                    label="Resume Link (Google Drive/Sheet)"
+                    icon={Upload}
+                    value={formData.resumeLink}
+                    onChange={(val) => setFormData({ ...formData, resumeLink: val })}
+                    placeholder="Eg. https://drive.google.com/..."
+                    required={resumeSource === 'link'}
+                  />
+                </TabsContent>
+                <TabsContent value="excel" className="mt-0">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-foreground">
+                      Upload Excel/CSV
+                    </label>
+                    <div
+                      className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition ${excelDragOver ? "border-primary bg-primary/10" : "border-muted"
+                        }`}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setExcelDragOver(true);
+                      }}
+                      onDragLeave={() => setExcelDragOver(false)}
+                      onDrop={handleExcelDrop}
+                      onClick={() => document.getElementById("excelFileInput")?.click()}
+                    >
+                      <FileSpreadsheet className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        Drag & drop Excel here, or click to upload
+                      </p>
+                      {formData.excelFile && (
+                        <p className="mt-2 text-sm text-primary font-medium">
+                          {formData.excelFile.name}
+                        </p>
+                      )}
+                      <input
+                        type="file"
+                        id="excelFileInput"
+                        accept=".xlsx, .xls, .csv"
+                        className="hidden"
+                        onChange={handleExcelFileChange}
+                        required={resumeSource === 'excel'}
+                      />
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
             <IconInput
               label="Number of Candidates"
               icon={ListChecks}
@@ -440,7 +568,7 @@ const ShortlistForm = () => {
                 }
                 required
               >
-                <SelectTrigger className="bg-background/50 border-primary/30 focus:border-primary focus:ring-primary/20">
+                <SelectTrigger className="bg-background/50 border-border focus:border-primary focus:ring-primary/20">
                   <SelectValue placeholder="Select notice period" />
                 </SelectTrigger>
                 <SelectContent>
@@ -480,7 +608,6 @@ const ShortlistForm = () => {
                 accept=".pdf"
                 className="hidden"
                 onChange={handleFileChange}
-                required
               />
             </div>
           </CardContent>
@@ -488,25 +615,28 @@ const ShortlistForm = () => {
       </div>
 
       {/* Submit & Reset */}
-      <div className="flex justify-center space-x-4">
+      <div className="flex justify-center space-x-4 pt-6 animate-slide-up" style={{ animationDelay: '0.4s' }}>
         <Button
           type="submit"
           disabled={submitting}
-          className="bg-primary hover:bg-primary/90 px-6 py-2 flex items-center"
+          className="btn-primary min-w-[200px]"
         >
           {submitting ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Submitting...
+              <Loader2 className="w-4 h-4 animate-spin" /> Submitting...
             </>
           ) : (
-            "Submit Shortlist"
+            <>
+              <ListChecks className="w-4 h-4" />
+              Submit Shortlist
+            </>
           )}
         </Button>
         <Button
           type="button"
           variant="outline"
           onClick={handleReset}
-          className="border-primary/30 hover:bg-primary/10 px-6 py-2"
+          className="btn-secondary min-w-[120px]"
         >
           Reset
         </Button>

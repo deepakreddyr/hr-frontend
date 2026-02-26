@@ -91,7 +91,7 @@ const Shortlist = () => {
         if (s) {
           // Set the search ID for update operation
           setImpSearchId(s.id);
-          
+
           // Convert boolean fields to string values for the form
           let remoteWorkValue = '';
           if (s.remote_work === true) {
@@ -99,14 +99,14 @@ const Shortlist = () => {
           } else if (s.remote_work === false) {
             remoteWorkValue = 'No';
           }
-          
+
           let contractHiringValue = '';
           if (s.contract_hiring === true) {
             contractHiringValue = 'Yes';
           } else if (s.contract_hiring === false) {
             contractHiringValue = 'No';
           }
-          
+
           setFormData({
             searchName: s.search_name || '',
             requiredSkills: s.key_skills || '',
@@ -126,7 +126,7 @@ const Shortlist = () => {
         if (t) {
           // Tasks create new shortlists, not updates
           setImpSearchId(null);
-          
+
           setFormData({
             searchName: t.title || '',
             requiredSkills: t.skills || '',
@@ -198,12 +198,12 @@ const Shortlist = () => {
     payload.append('noticePeriod', formData.noticePeriod);
     payload.append('remoteWorkAvailable', formData.remoteWorkAvailable);
     payload.append('contractHiring', formData.contractHiring);
-    
+
     // Include search_id in payload if updating
     if (impSearchId) {
       payload.append('search_id', impSearchId.toString());
     }
-    
+
     if (uploadedFile) payload.append('jdFile', uploadedFile);
 
     try {
@@ -295,14 +295,14 @@ const Shortlist = () => {
         <Alert className="border-blue-500 bg-blue-50 text-blue-900">
           <AlertCircle className="h-4 w-4 text-blue-600" />
           <AlertDescription>
-            You are updating an existing search. Old candidates with submitted resumes will be preserved, 
+            You are updating an existing search. Old candidates with submitted resumes will be preserved,
             and new candidates will be added based on your updated criteria.
           </AlertDescription>
         </Alert>
       )}
 
       {/* SOURCE SELECTOR */}
-      <Card className="bg-card/50 border-primary/20">
+      <Card className="bg-card/50 border-border">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Database className="w-5 h-5 text-primary" />
@@ -362,7 +362,7 @@ const Shortlist = () => {
 
       {/* FORM + JD UPLOAD */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-card/50 border-primary/20">
+        <Card className="bg-card/50 border-border">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Sparkles className="w-5 h-5 text-primary" />
@@ -420,7 +420,7 @@ const Shortlist = () => {
 
               <div className="border-t pt-4 mt-4">
                 <h3 className="text-sm font-semibold mb-3">Company & Position Details</h3>
-                
+
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">Hiring Company *</label>
@@ -454,8 +454,8 @@ const Shortlist = () => {
 
                   <div>
                     <label className="block text-sm font-medium mb-1">Notice Period *</label>
-                    <Select 
-                      value={formData.noticePeriod} 
+                    <Select
+                      value={formData.noticePeriod}
                       onValueChange={(value) => setFormData({ ...formData, noticePeriod: value })}
                       required
                     >
@@ -474,8 +474,8 @@ const Shortlist = () => {
 
                   <div>
                     <label className="block text-sm font-medium mb-1">Remote Work Available *</label>
-                    <Select 
-                      value={formData.remoteWorkAvailable} 
+                    <Select
+                      value={formData.remoteWorkAvailable}
                       onValueChange={(value) => setFormData({ ...formData, remoteWorkAvailable: value })}
                       required
                     >
@@ -492,8 +492,8 @@ const Shortlist = () => {
 
                   <div>
                     <label className="block text-sm font-medium mb-1">Contract Hiring *</label>
-                    <Select 
-                      value={formData.contractHiring} 
+                    <Select
+                      value={formData.contractHiring}
                       onValueChange={(value) => setFormData({ ...formData, contractHiring: value })}
                       required
                     >
@@ -536,7 +536,7 @@ const Shortlist = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-card/50 border-primary/20">
+        <Card className="bg-card/50 border-border">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <FileText className="w-5 h-5 text-accent" />
@@ -545,7 +545,7 @@ const Shortlist = () => {
           </CardHeader>
           <CardContent>
             {!uploadedFile ? (
-              <div className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
+              <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors">
                 <Upload className="w-16 h-16 text-primary mx-auto mb-4" />
                 <p className="text-lg font-medium mb-2">Upload Job Description PDF</p>
                 <p className="text-sm text-muted-foreground mb-4">
@@ -568,7 +568,7 @@ const Shortlist = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="p-6 border-2 border-primary/20 rounded-lg bg-primary/5">
+                <div className="p-6 border-2 border-border rounded-lg bg-primary/5">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-3 flex-1">
                       <FileText className="w-8 h-8 text-primary flex-shrink-0 mt-1" />
@@ -582,7 +582,7 @@ const Shortlist = () => {
                         </p>
                       </div>
                     </div>
-                    <button 
+                    <button
                       onClick={handleRemoveFile}
                       className="ml-2 p-2 hover:bg-red-50 rounded-lg transition-colors"
                       type="button"

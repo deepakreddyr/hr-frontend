@@ -9,7 +9,7 @@ const Loading = () => {
   const navigate = useNavigate();
   const searchParams = new URLSearchParams(location.search);
   const searchId = searchParams.get("search_id");
-  
+
   useEffect(() => {
     const texts = [
       'Analyzing resumes...',
@@ -39,9 +39,9 @@ const Loading = () => {
         await fetch(`${import.meta.env.VITE_API_URL}/api/loading?search_id=${searchId}`, {
           method: 'GET',
           headers: {
-          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-          "Content-Type": "application/json",
-        },
+            "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+            "Content-Type": "application/json",
+          },
         });
       } catch (err) {
         console.error('Error triggering processing:', err);
@@ -54,9 +54,9 @@ const Loading = () => {
         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/check-processing?search_id=${searchId}`, {
           method: 'GET',
           headers: {
-          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-          "Content-Type": "application/json",
-        },
+            "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+            "Content-Type": "application/json",
+          },
         });
         const data = await res.json();
 
@@ -105,7 +105,7 @@ const Loading = () => {
         <div className="relative">
           <div className="w-24 h-24 mx-auto mb-6 relative">
             <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-full animate-pulse-glow"></div>
-            <div className="relative w-full h-full bg-card/90 backdrop-blur-sm rounded-full flex items-center justify-center border border-border/50">
+            <div className="relative w-full h-full bg-card/90 backdrop-blur-sm rounded-full flex items-center justify-center border border-border">
               <Bot className="w-12 h-12 text-primary animate-bounce-gentle" />
             </div>
           </div>

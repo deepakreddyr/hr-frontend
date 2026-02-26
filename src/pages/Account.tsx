@@ -4,11 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { User, Shield, CreditCard, LogOut, UserPlus } from 'lucide-react';
+import { User, Shield, CreditCard, LogOut, UserPlus, Palette, Sun, Moon } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
+
 import { useToast } from '@/components/ui/use-toast'; // ✅ Import toast
 
 const Account = () => {
-  const { toast } = useToast(); // ✅ Initialize toast
+  const { toast } = useToast();
+  const { isDark, toggleTheme } = useTheme();
+  // ✅ Initialize toast
 
   const [passwordForm, setPasswordForm] = useState({
     oldPassword: '',
@@ -122,7 +126,7 @@ const Account = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* User Info Card */}
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 glow-primary animate-slide-up">
+        <Card className="bg-card/50 backdrop-blur-sm border-border hover:border-primary transition-all duration-300 glow-primary animate-slide-up">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <User className="w-5 h-5" />
@@ -150,7 +154,7 @@ const Account = () => {
                 <p className="text-foreground font-medium">{userData.role}</p>
               </div>
             </div>
-            <div className="flex items-center space-x-2 p-3 bg-primary/20 rounded-lg border border-primary/30 hover:bg-primary/30 transition-colors">
+            <div className="flex items-center space-x-2 p-3 bg-primary/20 rounded-lg border border-border hover:bg-primary/30 transition-colors">
               <CreditCard className="w-5 h-5 text-primary" />
               <span className="text-foreground">Credits Remaining: </span>
               <span className="text-primary font-bold text-lg">{userData.credits}</span>
@@ -160,7 +164,7 @@ const Account = () => {
 
         {/* Add User Form (Admin only) */}
         {isAdmin &&
-          <Card className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+          <Card className="bg-card/50 backdrop-blur-sm border-border hover:border-primary transition-all duration-300 animate-slide-up" style={{ animationDelay: '0.1s' }}>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <UserPlus className="w-5 h-5" />
@@ -206,7 +210,7 @@ const Account = () => {
                     id="role"
                     value={addUserForm.role}
                     onChange={(e) => setAddUserForm((prev) => ({ ...prev, role: e.target.value }))}
-                    className="w-full rounded-md border border-border/50 bg-background/50 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200"
+                    className="w-full rounded-md border border-border bg-background/50 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200"
                     required
                   >
                     <option value="">Select role</option>
@@ -223,9 +227,9 @@ const Account = () => {
         }
 
         {/* Security Settings */}
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 lg:col-span-2 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+        <Card className="bg-card shadow-sm border-border hover:border-primary transition-all duration-300 animate-slide-up" style={{ animationDelay: '0.2s' }}>
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
+            <CardTitle className="flex items-center space-x-2 text-foreground">
               <Shield className="w-5 h-5" />
               <span>Security & Sessions</span>
             </CardTitle>
@@ -245,12 +249,41 @@ const Account = () => {
               </div>
               <Switch defaultChecked className="data-[state=checked]:bg-primary" />
             </div>
-            <Button variant="destructive" className="hover-glow">
+            <Button variant="destructive" className="w-full sm:w-auto">
               <LogOut className="w-4 h-4 mr-2" />
               Logout All Devices
             </Button>
           </CardContent>
         </Card>
+
+        {/* Appearance Settings */}
+        <Card className="bg-card shadow-sm border-border hover:border-primary transition-all duration-300 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2 text-foreground">
+              <Palette className="w-5 h-5" />
+              <span>Appearance</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                {isDark ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-primary" />}
+                <div>
+                  <Label className="text-foreground font-medium">
+                    {isDark ? 'Dark Mode' : 'Lite Mode'}
+                  </Label>
+                  <p className="text-muted-foreground text-sm">Toggle between dark and lite theme</p>
+                </div>
+              </div>
+              <Switch
+                checked={isDark}
+                onCheckedChange={toggleTheme}
+                className="data-[state=checked]:bg-primary"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
       </div>
     </div>
   );

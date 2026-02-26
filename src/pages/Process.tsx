@@ -14,7 +14,7 @@ const ProcessingLoader = ({ searchId }: { searchId: string }) => {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState(false);
   const navigate = useNavigate();
-  
+
   useEffect(() => {
     const texts = [
       'Analyzing resumes...',
@@ -106,7 +106,7 @@ const ProcessingLoader = ({ searchId }: { searchId: string }) => {
         <div className="relative">
           <div className="w-24 h-24 mx-auto mb-6 relative">
             <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary/60 rounded-full animate-pulse"></div>
-            <div className="relative w-full h-full bg-card/90 backdrop-blur-sm rounded-full flex items-center justify-center border border-primary/20">
+            <div className="relative w-full h-full bg-card/90 backdrop-blur-sm rounded-full flex items-center justify-center border border-border">
               <Sparkles className="w-12 h-12 text-primary animate-bounce" />
             </div>
           </div>
@@ -153,8 +153,8 @@ const ProcessingLoader = ({ searchId }: { searchId: string }) => {
             <p className="text-red-500 text-sm">
               {loadingText}
             </p>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => navigate('/dashboard')}
               className="text-xs"
@@ -244,11 +244,11 @@ const Process = () => {
 
   const processFile = (file: File) => {
     const validTypes = ['text/csv', 'application/pdf', 'text/plain'];
-    const isValid = validTypes.includes(file.type) || 
-                    file.name.endsWith('.csv') || 
-                    file.name.endsWith('.pdf') || 
-                    file.name.endsWith('.txt');
-    
+    const isValid = validTypes.includes(file.type) ||
+      file.name.endsWith('.csv') ||
+      file.name.endsWith('.pdf') ||
+      file.name.endsWith('.txt');
+
     if (isValid) {
       setUploadedFile(file);
       setFormData({ bulkResumeData: '' });
@@ -273,7 +273,7 @@ const Process = () => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-    
+
     const file = e.dataTransfer.files?.[0];
     if (file) {
       processFile(file);
@@ -286,12 +286,12 @@ const Process = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.bulkResumeData.trim() && !uploadedFile) {
       alert('Please provide resume data either by pasting text or uploading a file.');
       return;
     }
-    
+
     setIsLoading(true);
 
     try {
@@ -376,7 +376,7 @@ const Process = () => {
           <Alert className="mt-4 border-blue-500 bg-blue-50 text-blue-900">
             <Info className="h-4 w-4 text-blue-600" />
             <AlertDescription>
-              <strong>Updated Shortlist:</strong> {oldCandidateCount} candidate(s) with submitted resumes have been preserved. 
+              <strong>Updated Shortlist:</strong> {oldCandidateCount} candidate(s) with submitted resumes have been preserved.
               You only need to upload resumes for the {target - oldCandidateCount} new candidate(s).
             </AlertDescription>
           </Alert>
@@ -410,15 +410,14 @@ const Process = () => {
                 return (
                   <div
                     key={candidate.index}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded-lg text-xs ${
-                      candidateHasResume && isOld
+                    className={`flex items-center space-x-1 px-2 py-1 rounded-lg text-xs ${candidateHasResume && isOld
                         ? 'bg-green-500/20 text-green-600 border border-green-500/40'
                         : candidateHasResume
-                        ? 'bg-green-500/20 text-green-400'
-                        : isCurrent
-                        ? 'bg-primary/20 text-primary border border-primary/40'
-                        : 'bg-secondary/20 text-muted-foreground'
-                    }`}
+                          ? 'bg-green-500/20 text-green-400'
+                          : isCurrent
+                            ? 'bg-primary/20 text-primary border border-border'
+                            : 'bg-secondary/20 text-muted-foreground'
+                      }`}
                   >
                     {candidateHasResume ? (
                       <CheckCircle className="w-3 h-3" />
@@ -443,7 +442,7 @@ const Process = () => {
         )}
       </div>
 
-      <Card className="bg-card/50 backdrop-blur-sm border-primary/20 max-w-4xl mx-auto">
+      <Card className="bg-card/50 backdrop-blur-sm border-border max-w-4xl mx-auto">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Sparkles className="w-5 h-5 text-primary" />
@@ -462,15 +461,14 @@ const Process = () => {
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-lg p-6 transition-all ${
-                isDragging
+              className={`border-2 border-dashed rounded-lg p-6 transition-all ${isDragging
                   ? 'border-primary bg-primary/10'
-                  : 'border-primary/30 bg-background/50'
-              }`}
+                  : 'border-border bg-background/50'
+                }`}
             >
               {uploadedFile ? (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-primary/10 rounded-lg border border-primary/20">
+                  <div className="flex items-center justify-between p-4 bg-primary/10 rounded-lg border border-border">
                     <div className="flex items-center space-x-3">
                       <FileText className="w-8 h-8 text-primary" />
                       <div>
@@ -512,9 +510,8 @@ const Process = () => {
                   />
                   <label
                     htmlFor="file-upload"
-                    className={`inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-lg cursor-pointer hover:bg-primary/90 transition-colors text-sm ${
-                      isLoading ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
+                    className={`inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-lg cursor-pointer hover:bg-primary/90 transition-colors text-sm ${isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
                   >
                     <Upload className="w-4 h-4 mr-2" />
                     Choose File
@@ -526,7 +523,8 @@ const Process = () => {
             {/* OR Divider */}
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-primary/20"></div>
+                <div className="w-full border-t border-border">
+                </div>
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-4 bg-card text-muted-foreground">OR</span>
@@ -547,7 +545,7 @@ const Process = () => {
                   }
                 }}
                 placeholder="Paste the resume content here..."
-                className="bg-background/50 border-primary/30 focus:border-primary focus:ring-primary/20 min-h-[200px]"
+                className="bg-background/50 border-border focus:border-primary focus:ring-primary/20 min-h-[200px]"
                 disabled={isLoading || !!uploadedFile}
               />
               <p className="text-xs text-muted-foreground mt-2">

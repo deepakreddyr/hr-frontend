@@ -92,19 +92,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </main>
 
       {/* Floating Action Menu */}
-      <div className="fixed bottom-6 right-6 flex items-center">
+      <div className="fixed bottom-6 right-6 flex items-center z-50">
         <div ref={btnContainerRef} className="flex items-center absolute right-12">
           <button
             onClick={() => handleButtonClick("/simple-shortlist")}
-            className="bg-purple-500 hover:bg-purple-600 transition-colors duration-200
-                       text-white text-sm w-24 h-10 shadow-lg rounded-2xl opacity-0"
+            className="btn-primary text-xs w-24 h-10 shadow-lg !rounded-2xl opacity-0"
           >
             S Search
           </button>
           <button
             onClick={() => handleButtonClick("/shortlist")}
-            className="bg-purple-500 hover:bg-purple-600 transition-colors duration-200
-                       text-white text-sm w-24 h-10 shadow-lg rounded-2xl opacity-0 ml-2"
+            className="btn-primary text-xs w-24 h-10 shadow-lg !rounded-2xl opacity-0 ml-2"
           >
             N Search
           </button>
@@ -113,10 +111,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Main toggle button */}
         <button
           onClick={toggleMenu}
-          className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300
-            ${expanded ? "bg-gray-700/70 rotate-45" : "bg-purple-500 hover:bg-purple-600"} text-white`}
+          className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 z-10
+            ${expanded ? "bg-secondary text-secondary-foreground rotate-45 border border-border/50 backdrop-blur-md" : "bg-primary text-primary-foreground hover:scale-110"}`}
         >
-          {expanded ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+          {expanded ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
         </button>
       </div>
     </div>
