@@ -168,7 +168,7 @@ const Help = () => {
                 <Mail className="w-5 h-5 text-primary" />
                 <div>
                   <p className="text-foreground font-medium">Email Support</p>
-                  <p className="text-primary text-sm">support@hyperx.ai</p>
+                  <p className="text-primary text-sm">thehireai.in@gmail.com</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3 p-3 bg-secondary/20 rounded-lg opacity-60">
