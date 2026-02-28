@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Phone, Heart, UserCheck, Star, Filter, Download, SortAsc, Search, CheckSquare, Users, Plus, Edit3, Trash2, AlertTriangle
+  Phone, Heart, UserCheck, Star, Filter, Download, SortAsc, Search, CheckSquare, Users, Plus, Edit3, Trash2, AlertTriangle, TrendingUp, ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,15 @@ const toast = {
   error: (message: string) => console.error(`TOAST ERROR: ${message}`),
   warning: (message: string) => console.warn(`TOAST WARNING: ${message}`),
 };
+
+interface AnalysisReport {
+  global_rank?: number;
+  tournament_rationale?: string;
+  tournament_final_score?: number;
+  scoring_tier?: string;
+  strengths?: string[];
+  weaknesses?: string[];
+}
 
 interface Candidate {
   id: number;
@@ -35,12 +45,14 @@ interface Candidate {
   summary: string;
   call_status: string;
   company?: string;
+  analysis_report?: AnalysisReport;
 }
 
 const Results: React.FC = () => {
   const { searchId } = useParams<{ searchId: string }>();
   const navigate = useNavigate();
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [hoveredRow, setHoveredRow] = useState<number | null>(null);
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCandidates, setSelectedCandidates] = useState<number[]>([]);
@@ -190,6 +202,7 @@ const Results: React.FC = () => {
           // Ensure experience fields are strings
           total_experience: c.totalExp ? String(c.totalExp) : '',
           relevant_work_experience: c.relevantExp ? String(c.relevantExp) : '',
+          analysis_report: c.analysis_report || null,
         }));
 
         setCandidates(fetchedCandidates);
@@ -783,6 +796,7 @@ const Results: React.FC = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12"></TableHead>
+                  <TableHead className="w-16">Rank</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
@@ -795,94 +809,171 @@ const Results: React.FC = () => {
               </TableHeader>
               <TableBody>
                 {filteredCandidates.map(candidate => (
-                  <TableRow
-                    key={candidate.id}
-                    className="hover:bg-primary/5"
-                  >
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={selectedCandidates.includes(candidate.id)}
-                        onChange={() => handleCandidateSelect(candidate.id)}
-                      />
-                    </TableCell>
-                    <TableCell className="cursor-pointer" onClick={() => navigate(`/transcript/${candidate.id}`)}>
-                      <div className="flex items-center space-x-3">
-                        <div>
-                          <p className="font-medium">{candidate.name}</p>
-                          <p className="text-xs text-muted-foreground">{candidate.skills}</p>
+                  <React.Fragment key={candidate.id}>
+                    <TableRow
+                      className={`transition-colors duration-150 cursor-pointer ${hoveredRow === candidate.id ? 'bg-primary/8 border-b-0' : 'hover:bg-primary/5'
+                        }`}
+                      onMouseEnter={() => setHoveredRow(candidate.id)}
+                      onMouseLeave={() => setHoveredRow(null)}
+                    >
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedCandidates.includes(candidate.id)}
+                          onChange={() => handleCandidateSelect(candidate.id)}
+                        />
+                      </TableCell>
+
+                      {/* GLOBAL RANK BADGE */}
+                      <TableCell>
+                        {candidate.analysis_report?.global_rank ? (
+                          <div className="flex items-center justify-center">
+                            <span
+                              className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold shadow-sm ${candidate.analysis_report.global_rank === 1
+                                ? 'bg-yellow-400/20 text-yellow-400 ring-1 ring-yellow-400/40'
+                                : candidate.analysis_report.global_rank === 2
+                                  ? 'bg-slate-400/20 text-slate-300 ring-1 ring-slate-400/40'
+                                  : candidate.analysis_report.global_rank === 3
+                                    ? 'bg-orange-400/20 text-orange-400 ring-1 ring-orange-400/40'
+                                    : 'bg-primary/10 text-primary ring-1 ring-primary/30'
+                                }`}
+                            >
+                              #{candidate.analysis_report.global_rank}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-xs text-center block">—</span>
+                        )}
+                      </TableCell>
+
+                      <TableCell className="cursor-pointer" onClick={() => navigate(`/transcript/${candidate.id}`)}>
+                        <div className="flex items-center space-x-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{candidate.name}</p>
+                              {candidate.analysis_report?.tournament_rationale && (
+                                <ChevronDown
+                                  className={`w-3.5 h-3.5 text-muted-foreground transition-transform duration-200 ${hoveredRow === candidate.id ? 'rotate-180 text-primary' : ''
+                                    }`}
+                                />
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">{candidate.skills}</p>
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{candidate.email}</TableCell>
-                    <TableCell className="text-muted-foreground">{candidate.phone}</TableCell>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{candidate.email}</TableCell>
+                      <TableCell className="text-muted-foreground">{candidate.phone}</TableCell>
 
-                    {/* FIXED: Display experience properly, checking for '0', null, undefined, and empty string */}
-                    <TableCell>
-                      {candidate.total_experience &&
-                        candidate.total_experience !== '0' &&
-                        candidate.total_experience.trim() !== ''
-                        ? `${candidate.total_experience} yrs`
-                        : '-'}
-                    </TableCell>
-                    <TableCell>
-                      {candidate.relevant_work_experience &&
-                        candidate.relevant_work_experience !== '0' &&
-                        candidate.relevant_work_experience.trim() !== ''
-                        ? `${candidate.relevant_work_experience} yrs`
-                        : '-'}
-                    </TableCell>
+                      <TableCell>
+                        {candidate.total_experience &&
+                          candidate.total_experience !== '0' &&
+                          candidate.total_experience.trim() !== ''
+                          ? `${candidate.total_experience} yrs`
+                          : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {candidate.relevant_work_experience &&
+                          candidate.relevant_work_experience !== '0' &&
+                          candidate.relevant_work_experience.trim() !== ''
+                          ? `${candidate.relevant_work_experience} yrs`
+                          : '-'}
+                      </TableCell>
 
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-sm font-medium ${getMatchScoreColor(candidate.match_score)}`}>
-                        {candidate.match_score}%
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(candidate.call_status)}`}>
-                        {candidate.call_status}
-                      </span>
-                    </TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center space-x-2">
-                        {/* EDIT CANDIDATE BUTTON */}
-                        <button
-                          onClick={() => handleOpenEditModal(candidate.id)}
-                          className="p-1 hover:bg-primary/10 rounded"
-                          title="Edit Candidate"
-                        >
-                          <Edit3 className="w-4 h-4 text-blue-400" />
-                        </button>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-sm font-medium ${getMatchScoreColor(candidate.match_score)}`}>
+                          {candidate.match_score}%
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(candidate.call_status)}`}>
+                          {candidate.call_status}
+                        </span>
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleOpenEditModal(candidate.id)}
+                            className="p-1 hover:bg-primary/10 rounded"
+                            title="Edit Candidate"
+                          >
+                            <Edit3 className="w-4 h-4 text-blue-400" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(candidate.id, candidate.name)}
+                            className="p-1 hover:bg-red-400/10 rounded"
+                            title="Delete Candidate"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-400" />
+                          </button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-primary/30"
+                            onClick={() => handleCallCandidate(candidate)}
+                          >
+                            Call
+                          </Button>
+                          <button
+                            onClick={() => handleLikeToggle(candidate.id, candidate.liked)}
+                            className="p-1 hover:bg-accent/10 rounded"
+                          >
+                            <Heart
+                              className={`w-4 h-4 ${candidate.liked ? 'text-red-400 fill-current' : 'text-muted-foreground'}`}
+                            />
+                          </button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
 
-                        {/* DELETE CANDIDATE BUTTON - Now with confirmation */}
-                        <button
-                          onClick={() => handleDeleteClick(candidate.id, candidate.name)}
-                          className="p-1 hover:bg-red-400/10 rounded"
-                          title="Delete Candidate"
+                    {/* ANIMATED RATIONALE DROPDOWN ROW */}
+                    <AnimatePresence>
+                      {hoveredRow === candidate.id && candidate.analysis_report?.tournament_rationale && (
+                        <tr
+                          onMouseEnter={() => setHoveredRow(candidate.id)}
+                          onMouseLeave={() => setHoveredRow(null)}
+                          className="bg-primary/5 border-b border-primary/10"
                         >
-                          <Trash2 className="w-4 h-4 text-red-400" />
-                        </button>
-
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-primary/30"
-                          onClick={() => handleCallCandidate(candidate)}
-                        >
-                          Call
-                        </Button>
-                        <button
-                          onClick={() => handleLikeToggle(candidate.id, candidate.liked)}
-                          className="p-1 hover:bg-accent/10 rounded"
-                        >
-                          <Heart
-                            className={`w-4 h-4 ${candidate.liked ? 'text-red-400 fill-current' : 'text-muted-foreground'
-                              }`}
-                          />
-                        </button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                          <td colSpan={10} className="p-0 overflow-hidden">
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.22, ease: 'easeOut' }}
+                            >
+                              <div className="px-6 py-4">
+                                <div className="flex items-center gap-4 p-4 rounded-xl border border-primary/15 bg-card/60 backdrop-blur-sm">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1.5">
+                                      <span className="text-xs font-semibold uppercase tracking-wider text-primary">AI Ranking Rationale</span>
+                                      {candidate.analysis_report?.scoring_tier && (
+                                        <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                                          {candidate.analysis_report.scoring_tier}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-sm text-foreground/85 leading-relaxed">
+                                      {candidate.analysis_report.tournament_rationale}
+                                    </p>
+                                  </div>
+                                  {/* Tournament score pill - centred */}
+                                  {candidate.analysis_report?.tournament_final_score && (
+                                    <div className="flex-shrink-0 flex flex-col items-center justify-center gap-0.5">
+                                      <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-400/10 ring-1 ring-green-400/20">
+                                        <TrendingUp className="w-3.5 h-3.5 text-green-400" />
+                                        <span className="text-sm font-bold text-green-400">{candidate.analysis_report.tournament_final_score}</span>
+                                      </div>
+                                      <span className="text-[10px] text-muted-foreground">Score</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </motion.div>
+                          </td>
+                        </tr>
+                      )}
+                    </AnimatePresence>
+                  </React.Fragment>
                 ))}
               </TableBody>
             </Table>
