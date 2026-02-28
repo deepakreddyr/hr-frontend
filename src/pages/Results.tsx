@@ -963,7 +963,7 @@ const Results: React.FC = () => {
                                         <TrendingUp className="w-3.5 h-3.5 text-green-400" />
                                         <span className="text-sm font-bold text-green-400">{candidate.analysis_report.tournament_final_score}</span>
                                       </div>
-                                      <span className="text-[10px] text-muted-foreground">Score</span>
+                                      {/* <span className="text-[10px] text-muted-foreground">Score</span> */}
                                     </div>
                                   )}
                                 </div>
