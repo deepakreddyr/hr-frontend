@@ -139,6 +139,16 @@ const getRecommendationColor = (recommendation: string): string => {
   return 'text-blue-400 bg-blue-400/20 border-blue-400/30';
 };
 
+const isDataEmpty = (data: any): boolean => {
+  if (data === null || data === undefined || data === "") return true;
+  if (Array.isArray(data)) return data.length === 0 || data.every(isDataEmpty);
+  if (typeof data === 'object') {
+    const values = Object.values(data);
+    return values.length === 0 || values.every(isDataEmpty);
+  }
+  return false;
+};
+
 const renderStructuredValue = (value: any): JSX.Element => {
   if (value === null || value === undefined) {
     return <span className="text-muted-foreground italic">N/A</span>;
@@ -771,7 +781,9 @@ const Transcript: React.FC = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-6">
-                      {Object.entries(structuredData).map(([key, value], i) => (
+                      {Object.entries(structuredData)
+                        .filter(([_, value]) => !isDataEmpty(value))
+                        .map(([key, value], i) => (
                         <div key={i} className="border-b border-border/50 pb-6 last:border-0 last:pb-0">
                           <div className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider flex items-center gap-2">
                             <div className="w-1 h-3 bg-accent rounded-full" />
