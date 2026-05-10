@@ -13,6 +13,7 @@ const ProcessingLoader = ({ searchId }: { searchId: string }) => {
   const [loadingText, setLoadingText] = useState('Analyzing resumes...');
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState(false);
+  const [noMatches, setNoMatches] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -71,6 +72,9 @@ const ProcessingLoader = ({ searchId }: { searchId: string }) => {
 
           if (data.status === 'results') {
             navigate(`/results/${searchId}`);
+          } else if (data.status === 'no_candidates') {
+            setNoMatches(true);
+            setLoadingText('No candidates matched the required skills.');
           } else if (data.status === 'error') {
             setError(true);
             setLoadingText('Processing failed. Please try again.');
@@ -147,6 +151,22 @@ const ProcessingLoader = ({ searchId }: { searchId: string }) => {
             {Math.round(Math.min(progress, 100))}% complete
           </p>
         </div>
+
+        {noMatches && (
+          <div className="space-y-4">
+            <p className="text-amber-500 text-sm font-medium">
+              We couldn't find any strong matches for the requirements in the provided resumes.
+            </p>
+            <Button
+              variant="default"
+              size="lg"
+              onClick={() => navigate(`/shortlist/${searchId}`)}
+              className="w-full"
+            >
+              Refine Shortlist Criteria
+            </Button>
+          </div>
+        )}
 
         {error && (
           <div className="space-y-2">
