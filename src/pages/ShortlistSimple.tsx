@@ -1,4 +1,4 @@
-import React, { useState, useEffect, DragEvent } from "react";
+import React, { useState, useEffect, DragEvent, useRef } from "react";
 import {
   Building,
   MapPin,
@@ -88,6 +88,7 @@ const ShortlistForm = () => {
   const [taskOptions, setTaskOptions] = useState<any[]>([]);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [loadingTasks, setLoadingTasks] = useState(false);
+  const formTopRef = useRef<HTMLDivElement>(null);
 
   // Fetch tasks when sourceType changes to 'task'
   useEffect(() => {
@@ -194,6 +195,7 @@ const ShortlistForm = () => {
         variant: "destructive",
         duration: 5000,
       });
+      formTopRef.current?.scrollIntoView({ behavior: 'smooth' });
       return;
     }
 
@@ -205,6 +207,7 @@ const ShortlistForm = () => {
         variant: "destructive",
         duration: 5000,
       });
+      formTopRef.current?.scrollIntoView({ behavior: 'smooth' });
       return;
     }
     if (resumeSource === 'excel' && !formData.excelFile) {
@@ -214,6 +217,7 @@ const ShortlistForm = () => {
         variant: "destructive",
         duration: 5000,
       });
+      formTopRef.current?.scrollIntoView({ behavior: 'smooth' });
       return;
     }
 
@@ -307,6 +311,7 @@ const ShortlistForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="max-w-6xl mx-auto p-6 space-y-6">
+      <div ref={formTopRef} />
       <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center space-x-2">
         <ListChecks className="w-7 h-7 text-primary" />
         <span>Create Shortlist</span>
@@ -353,6 +358,7 @@ const ShortlistForm = () => {
                     <SelectValue
                       placeholder={loadingTasks ? 'Loading tasks...' : 'Select a task'}
                     />
+                    {loadingTasks && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
                   </SelectTrigger>
                   <SelectContent>
                     {taskOptions.length === 0 && !loadingTasks ? (

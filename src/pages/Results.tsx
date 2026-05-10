@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Phone, Heart, UserCheck, Star, Filter, Download, SortAsc, Search, CheckSquare, Users, Plus, Edit3, Trash2, AlertTriangle, TrendingUp, ChevronDown
+  Phone, Heart, UserCheck, Star, Filter, Download, SortAsc, Search, CheckSquare, Users, Plus, Edit3, Trash2, AlertTriangle, TrendingUp, ChevronDown, XCircle, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -72,6 +72,14 @@ const Results: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedOptions, setGeneratedOptions] = useState<string[]>([]);
   const [savedCustomQuestion, setSavedCustomQuestion] = useState('');
+
+  // ── Bulk call state ────────────────────────────────────────────────────────
+  const [bulkCallSession, setBulkCallSession] = useState<{ bulkListId: string; total: number } | null>(null);
+  const [bulkCallProgress, setBulkCallProgress] = useState<{
+    completed: number; in_progress: number; pending: number; failed: number; done: boolean;
+  } | null>(null);
+  const [isBulkCalling, setIsBulkCalling] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // State for CandidateFormModal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -271,6 +279,33 @@ const Results: React.FC = () => {
   useEffect(() => {
     setSelectedCandidates([]);
   }, [filter, searchTerm]);
+
+  // ── Bulk call progress polling ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!bulkCallSession) return;
+
+    const token = localStorage.getItem('access_token');
+    const interval = setInterval(async () => {
+      try {
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_URL}/api/bulk-call-status?bulk_list_id=${bulkCallSession.bulkListId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const prog = res.data;
+        setBulkCallProgress(prog);
+
+        if (prog.done) {
+          clearInterval(interval);
+          setIsBulkCalling(false);
+          toast.success(`Bulk call complete — ${prog.completed} / ${prog.total} connected.`);
+        }
+      } catch (err) {
+        console.error('Bulk call status poll error:', err);
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [bulkCallSession]);
 
   const handleCandidateSelect = (candidateId: number) => {
     setSelectedCandidates(prev =>
@@ -501,74 +536,78 @@ const Results: React.FC = () => {
     }
   };
 
-  const handleCallSelectedCandidates = async () => {
-    const selectedFiltered = getSelectedFilteredCandidates();
-
-    if (selectedFiltered.length === 0) {
-      toast.warning("No candidates selected from the current filtered view.");
+  // ── Shared helper: kick off a bulk call session ───────────────────────────
+  const launchBulkCall = async (candidateList: Candidate[]) => {
+    if (isBulkCalling) {
+      toast.warning('A bulk call is already in progress.');
       return;
     }
+    setIsBulkCalling(true);
+    setBulkCallProgress(null);
+    setBulkCallSession(null);
 
+    const token = localStorage.getItem('access_token');
     try {
-      const payload = selectedFiltered.map(c => ({
+      const payload = candidateList.map(c => ({
         name: c.name,
         phone: c.phone,
         skills: c.skills,
-        company: c.company || '',
-        candidate_id: c.id
+        candidate_id: c.id,
       }));
 
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/call`, {
-        search_id: searchId,
-        candidates: payload
-      }, {
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/bulk-call`,
+        { search_id: searchId, candidates: payload, max_concurrent_calls: 2 },
+        { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
+      );
 
-      setShowCallSuccess(true);
-      setTimeout(() => {
-        setShowCallSuccess(false);
-      }, 3000);
-      toast.success(`${selectedFiltered.length} calls initiated successfully.`);
-
+      const { bulk_list_id, total } = res.data;
+      setBulkCallSession({ bulkListId: bulk_list_id, total });
+      setBulkCallProgress({ completed: 0, in_progress: 0, pending: total, failed: 0, done: false });
+      toast.success(`Bulk call started for ${total} candidates (max 2 concurrent).`);
       setSelectedCandidates([]);
-    } catch (error) {
-      console.error("Failed to call selected candidates", error);
-      toast.error("Failed to initiate calls for selected candidates.");
+    } catch (error: any) {
+      console.error('Bulk call failed', error);
+      toast.error(`Failed to start bulk call: ${error.response?.data?.error || 'Server error'}`);
+      setIsBulkCalling(false);
     }
+  };
+
+  const handleCallSelectedCandidates = async () => {
+    const selectedFiltered = getSelectedFilteredCandidates();
+    if (selectedFiltered.length === 0) {
+      toast.warning('No candidates selected from the current filtered view.');
+      return;
+    }
+    await launchBulkCall(selectedFiltered);
   };
 
   const handleCallAllCandidates = async () => {
     if (filteredCandidates.length === 0) {
-      toast.warning("No candidates in the current filtered view.");
+      toast.warning('No candidates in the current filtered view.');
       return;
     }
+    await launchBulkCall(filteredCandidates);
+  };
 
+  const handleCancelBulkCall = async () => {
+    setIsCancelling(true);
+    const token = localStorage.getItem('access_token');
     try {
-      const payload = filteredCandidates.map(c => ({
-        name: c.name,
-        phone: c.phone,
-        skills: c.skills,
-        company: c.company || '',
-        candidate_id: c.id
-      }));
-
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/call`, {
-        search_id: searchId,
-        candidates: payload
-      }, {
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-          "Content-Type": "application/json",
-        },
-      });
-      toast.success(`Calls initiated for all ${filteredCandidates.length} filtered candidates.`);
-    } catch (error) {
-      console.error("Failed to call all candidates", error);
-      toast.error("Failed to initiate calls for all candidates.");
+      await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/bulk-call-cancel`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success('Bulk call campaign cancelled.');
+    } catch (err: any) {
+      console.error('Cancel error', err);
+      toast.error('Failed to cancel bulk call.');
+    } finally {
+      setBulkCallSession(null);
+      setBulkCallProgress(null);
+      setIsBulkCalling(false);
+      setIsCancelling(false);
     }
   };
 
@@ -957,15 +996,15 @@ const Results: React.FC = () => {
                                     </p>
                                   </div>
                                   {/* Tournament score pill - centred */}
-                                  {candidate.analysis_report?.tournament_final_score && (
+                                  {/* {candidate.analysis_report?.tournament_final_score && (
                                     <div className="flex-shrink-0 flex flex-col items-center justify-center gap-0.5">
                                       <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-400/10 ring-1 ring-green-400/20">
                                         <TrendingUp className="w-3.5 h-3.5 text-green-400" />
                                         <span className="text-sm font-bold text-green-400">{candidate.analysis_report.tournament_final_score}</span>
                                       </div>
-                                      {/* <span className="text-[10px] text-muted-foreground">Score</span> */}
+                                      <span className="text-[10px] text-muted-foreground">Score</span>
                                     </div>
-                                  )}
+                                  )} */}
                                 </div>
                               </div>
                             </motion.div>
@@ -986,17 +1025,21 @@ const Results: React.FC = () => {
         <CardContent className="p-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-3">
-              <Button className="bg-primary hover:bg-primary/90" onClick={handleCallAllCandidates}>
-                <Phone className="w-4 h-4 mr-2" />
+              <Button
+                className="bg-primary hover:bg-primary/90"
+                onClick={handleCallAllCandidates}
+                disabled={isBulkCalling}
+              >
+                {isBulkCalling ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Phone className="w-4 h-4 mr-2" />}
                 Call All {filter !== 'all' ? 'Filtered' : ''} ({filteredCandidates.length})
               </Button>
               <Button
-                disabled={selectedFilteredCount === 0}
+                disabled={selectedFilteredCount === 0 || isBulkCalling}
                 variant="outline"
                 className="border-border hover:bg-primary/10"
                 onClick={handleCallSelectedCandidates}
               >
-                <Phone className="w-4 h-4 mr-2" />
+                {isBulkCalling ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Phone className="w-4 h-4 mr-2" />}
                 Call Selected ({selectedFilteredCount})
               </Button>
             </div>
@@ -1025,6 +1068,69 @@ const Results: React.FC = () => {
       {showFinalSuccess && (
         <div className="fixed bottom-5 right-5 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg animate-slide-up z-50">
           Selected candidates added to <strong>Final Selects</strong>!
+        </div>
+      )}
+
+      {/* ── BULK CALL PROGRESS BANNER ─────────────────────────────────────────── */}
+      {isBulkCalling && bulkCallProgress && (
+        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 w-full max-w-xl px-4">
+          <div className="bg-card border border-primary/30 rounded-2xl shadow-2xl backdrop-blur-md p-4">
+            <div className="flex items-center justify-between gap-4">
+              {/* Left: icon + text */}
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
+                  <Phone className="w-4 h-4 text-primary animate-pulse" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">
+                    Bulk Call in Progress
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="text-primary font-bold">{bulkCallProgress.completed}</span>
+                    {' '}completed &nbsp;·&nbsp;
+                    <span className="text-yellow-400 font-bold">{bulkCallProgress.in_progress}</span>
+                    {' '}calling &nbsp;·&nbsp;
+                    <span className="text-muted-foreground">{bulkCallProgress.pending}</span>
+                    {' '}pending
+                    {bulkCallProgress.failed > 0 && (
+                      <> &nbsp;·&nbsp; <span className="text-red-400 font-bold">{bulkCallProgress.failed}</span> failed</>
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              <div className="flex-1 hidden sm:block">
+                <div className="w-full h-1.5 bg-muted/40 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all duration-700 ease-out"
+                    style={{
+                      width: bulkCallSession
+                        ? `${Math.round(((bulkCallProgress.completed + bulkCallProgress.failed) / bulkCallSession.total) * 100)}%`
+                        : '0%'
+                    }}
+                  />
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-0.5 text-right">
+                  {bulkCallSession
+                    ? `${bulkCallProgress.completed + bulkCallProgress.failed} / ${bulkCallSession.total}`
+                    : ''}
+                </p>
+              </div>
+
+              {/* Cancel button */}
+              <button
+                onClick={handleCancelBulkCall}
+                disabled={isCancelling}
+                className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-medium transition-colors disabled:opacity-50"
+              >
+                {isCancelling
+                  ? <Loader2 className="w-3 h-3 animate-spin" />
+                  : <XCircle className="w-3 h-3" />}
+                {isCancelling ? 'Cancelling…' : 'Cancel'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Upload, FileText, X, Sparkles, Filter, Database, AlertCircle } from 'lucide-react';
+import { Upload, FileText, X, Sparkles, Filter, Database, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,6 +30,8 @@ const Shortlist = () => {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const errorRef = useRef<HTMLDivElement>(null);
 
   // Source selector
   const [sourceType, setSourceType] = useState<'blank' | 'search' | 'task'>('blank');
@@ -172,6 +175,9 @@ const Shortlist = () => {
     }
     if (errs.length) {
       setErrorMessage(errs.join(', '));
+      setTimeout(() => {
+        errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
       return false;
     }
     setErrorMessage(null);
@@ -277,12 +283,14 @@ const Shortlist = () => {
         )}
       </div>
 
-      {errorMessage && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{errorMessage}</AlertDescription>
-        </Alert>
-      )}
+      <div ref={errorRef}>
+        {errorMessage && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
+      </div>
 
       {successMessage && (
         <Alert className="border-green-500 bg-green-50 text-green-900">
@@ -336,7 +344,8 @@ const Shortlist = () => {
                   disabled={loadingTasks && sourceType === 'task'}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={loadingTasks ? 'Loading…' : `Select a ${sourceType}`} />
+                    <SelectValue placeholder={loadingTasks || (sourceType === 'search' && loading) ? 'Loading…' : `Select a ${sourceType}`} />
+                    {(loadingTasks || (sourceType === 'search' && loading)) && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
                   </SelectTrigger>
                   <SelectContent>
                     {sourceOptions.length === 0 ? (
@@ -545,11 +554,21 @@ const Shortlist = () => {
           </CardHeader>
           <CardContent>
             {!uploadedFile ? (
-              <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors">
+              <div 
+                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragOver ? 'border-primary bg-primary/10' : 'border-border hover:border-primary'}`}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOver(false);
+                  const f = e.dataTransfer.files?.[0];
+                  if (f && f.type === 'application/pdf') setUploadedFile(f);
+                }}
+              >
                 <Upload className="w-16 h-16 text-primary mx-auto mb-4" />
                 <p className="text-lg font-medium mb-2">Upload Job Description PDF</p>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Click to select a PDF file from your computer
+                  Drag & drop PDF here, or click to select
                 </p>
                 <input
                   type="file"
