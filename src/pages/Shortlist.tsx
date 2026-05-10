@@ -38,6 +38,7 @@ const Shortlist = () => {
   const [sourceOptions, setSourceOptions] = useState<any[]>([]);
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
   const [loadingTasks, setLoadingTasks] = useState(false);
+  const [loadingSearches, setLoadingSearches] = useState(false);
 
   // Notice period options
   const noticePeriodOptions = [
@@ -54,11 +55,13 @@ const Shortlist = () => {
     const fetchSources = async () => {
       try {
         if (sourceType === 'search') {
+          setLoadingSearches(true);
           const res = await fetch(`${import.meta.env.VITE_API_URL}/api/get-search`, {
             headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
           });
           const data = await res.json();
           setSourceOptions(data.success ? data.tasks || [] : []);
+          setLoadingSearches(false);
         } else if (sourceType === 'task') {
           setLoadingTasks(true);
           const res = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/inbox`, {
@@ -344,13 +347,20 @@ const Shortlist = () => {
                   disabled={loadingTasks && sourceType === 'task'}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={loadingTasks || (sourceType === 'search' && loading) ? 'Loading…' : `Select a ${sourceType}`} />
-                    {(loadingTasks || (sourceType === 'search' && loading)) && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
+                    <SelectValue placeholder={loadingTasks || loadingSearches ? 'Loading…' : `Select a ${sourceType}`} />
+                    {(loadingTasks || loadingSearches) && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
                   </SelectTrigger>
                   <SelectContent>
-                    {sourceOptions.length === 0 ? (
+                    {loadingTasks || loadingSearches ? (
+                      <SelectItem value="loading" disabled>
+                        <div className="flex items-center">
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          Loading {sourceType}s...
+                        </div>
+                      </SelectItem>
+                    ) : sourceOptions.length === 0 ? (
                       <SelectItem value="none" disabled>
-                        No {sourceType}s found
+                        No {sourceType === 'search' ? 'searches' : 'tasks'} found
                       </SelectItem>
                     ) : (
                       sourceOptions.map((opt) => (

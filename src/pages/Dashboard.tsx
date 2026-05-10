@@ -132,9 +132,9 @@ const Dashboard = () => {
           </p>
         </div>
         <div className="text-right">
-          <p className="text-sm text-muted-foreground">Credits (Used / Total)</p>
+          <p className="text-sm text-muted-foreground">Total Credits</p>
           <p className="text-2xl font-bold text-primary">
-            {dashboardData.creds_used || 0} / {dashboardData.creds_total || 0}
+            {dashboardData.creds_total || 0}
           </p>
         </div>
       </div>
@@ -170,8 +170,8 @@ const Dashboard = () => {
           color="warning"
         />
         <MetricCard
-          title="Credits Used / Total"
-          value={`${dashboardData.creds_used || 0} / ${dashboardData.creds_total || 0}`}
+          title="Credits Used"
+          value={dashboardData.creds_used || 0}
           icon={CreditCard}
           color="primary"
         />
